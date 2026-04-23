@@ -8,10 +8,14 @@ class PosOrderLine(models.Model):
     custom_cost_price = fields.Float(string="Custom Cost Price")
 
     @classmethod
-    def _load_pos_data_fields(cls, config_id):
-        fields_list = super()._load_pos_data_fields(config_id)
+    def _load_pos_data_fields(cls, config):
+        fields_list = super()._load_pos_data_fields(config)
         fields_list += ["custom_description", "custom_cost_price"]
         return fields_list
+
+    @classmethod
+    def _load_pos_data_domain(cls, data):
+        return super()._load_pos_data_domain(data)
 
     def _export_for_ui(self, orderline):
         result = super()._export_for_ui(orderline)
