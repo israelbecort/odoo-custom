@@ -1,7 +1,7 @@
 /** @odoo-module **/
 
 import { patch } from "@web/core/utils/patch";
-import { PosStore } from "@point_of_sale/app/store/pos_store";
+import { PosStore } from "@point_of_sale/app/services/pos_store";
 
 patch(PosStore.prototype, {
     async addProductToCurrentOrder(product, options = {}) {
@@ -29,15 +29,12 @@ patch(PosStore.prototype, {
 
         const order = this.get_order();
         const line = order?.get_selected_orderline?.();
-        if (!line) {
-            return result;
-        }
-
-        line.custom_description = description.trim();
-        line.custom_cost_price = cost;
-
-        if (typeof line.set_unit_price === "function") {
-            line.set_unit_price(salePrice);
+        if (line) {
+            line.custom_description = description.trim();
+            line.custom_cost_price = cost;
+            if (typeof line.set_unit_price === "function") {
+                line.set_unit_price(salePrice);
+            }
         }
 
         return result;
