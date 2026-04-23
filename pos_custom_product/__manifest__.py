@@ -5,10 +5,7 @@
     "depends": ["point_of_sale"],
     "data": [],
     "assets": {
-        "point_of_sale._assets_pos": [
-            "pos_custom_product/static/src/js/pos_custom_product.js",
-            "pos_custom_product/static/src/xml/pos_custom_product_popup.xml",
-        ],
+        "point_of_sale._assets_pos": [],
     },
     "installable": True,
     "application": False,
