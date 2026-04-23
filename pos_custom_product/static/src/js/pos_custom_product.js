@@ -5,9 +5,13 @@ import { PosStore } from "@point_of_sale/app/services/pos_store";
 
 patch(PosStore.prototype, {
     async addProductToCurrentOrder(product, options = {}) {
+        console.log("HOOK addProductToCurrentOrder", product);
+
         if (product.barcode !== "CUSTOM") {
             return super.addProductToCurrentOrder(product, options);
         }
+
+        alert("CUSTOM detectado");
 
         const description = window.prompt("Descripción del producto personalizado:");
         if (!description || !description.trim()) {
@@ -22,21 +26,9 @@ patch(PosStore.prototype, {
 
         const salePrice = Number((cost * 1.35).toFixed(2));
 
-        const result = await super.addProductToCurrentOrder(product, {
+        return super.addProductToCurrentOrder(product, {
             ...options,
             price: salePrice,
         });
-
-        const order = this.get_order();
-        const line = order?.get_selected_orderline?.();
-        if (line) {
-            line.custom_description = description.trim();
-            line.custom_cost_price = cost;
-            if (typeof line.set_unit_price === "function") {
-                line.set_unit_price(salePrice);
-            }
-        }
-
-        return result;
     },
 });
