@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates id="template" xml:space="preserve">
+    <t t-name="pos_custom_product.CustomProductPopup">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title">Producto personalizado</h4>
+                </div>
+                <div class="modal-body">
+                    <div style="margin-bottom: 12px;">
+                        <label>Descripción</label>
+                        <input
+                            type="text"
+                            t-model="state.description"
+                            class="form-control"
+                            placeholder="Descripción del producto"
+                        />
+                    </div>
+                    <div>
+                        <label>Precio de coste</label>
+                        <input
+                            type="number"
+                            step="0.01"
+                            t-model="state.cost"
+                            class="form-control"
+                            placeholder="0.00"
+                        />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" t-on-click="cancel">
+                        Cancelar
+                    </button>
+                    <button class="btn btn-primary" t-on-click="confirm">
+                        Confirmar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </t>
+</templates>
