@@ -19,23 +19,23 @@ class CustomProductPopup extends Component {
     }
 
     cancel() {
-        this.props.close({ confirmed: false });
+        this.props.close();
     }
 
     confirm() {
         const cost = parseFloat((this.state.cost || "").replace(",", "."));
+        const description = this.state.description.trim();
 
-        if (!this.state.description.trim() || !cost || cost <= 0) {
+        if (!description || !cost || cost <= 0) {
             return;
         }
 
-        this.props.close({
-            confirmed: true,
-            payload: {
-                description: this.state.description.trim(),
-                cost,
-            },
+        this.props.getPayload({
+            description,
+            cost,
         });
+
+        this.props.close();
     }
 }
 
@@ -48,14 +48,13 @@ patch(PosStore.prototype, {
             return await super.addLineToCurrentOrder(vals, opts, configure);
         }
 
-        const result = await makeAwaitable(this.dialog, CustomProductPopup, {});
+        const payload = await makeAwaitable(this.dialog, CustomProductPopup, {});
 
-        if (!result || !result.confirmed) {
+        if (!payload) {
             return;
         }
 
-        const cost = result.payload.cost;
-        const salePrice = Number((cost * 1.35).toFixed(2));
+        const salePrice = Number((payload.cost * 1.35).toFixed(2));
 
         const line = await super.addLineToCurrentOrder(
             vals,
@@ -67,8 +66,8 @@ patch(PosStore.prototype, {
         const selectedLine = order?.get_selected_orderline?.();
 
         if (selectedLine) {
-            selectedLine.custom_description = result.payload.description;
-            selectedLine.custom_cost_price = cost;
+            selectedLine.custom_description = payload.description;
+            selectedLine.custom_cost_price = payload.cost;
 
             if (typeof selectedLine.set_unit_price === "function") {
                 selectedLine.set_unit_price(salePrice);
