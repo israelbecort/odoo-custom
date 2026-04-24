@@ -1,6 +1,26 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <templates id="template" xml:space="preserve">
 
+    <t t-name="pos_custom_product.AskCalculatePopup">
+        <Dialog title="'Producto personalizado'">
+            <div class="p-3">
+                <h4>¿Desea calcular el precio de venta?</h4>
+            </div>
+
+            <t t-set-slot="footer">
+                <button class="btn btn-secondary" t-on-click="cancel">
+                    Cancelar
+                </button>
+                <button class="btn btn-light" t-on-click="no">
+                    No
+                </button>
+                <button class="btn btn-primary" t-on-click="yes">
+                    Sí
+                </button>
+            </t>
+        </Dialog>
+    </t>
+
     <t t-name="pos_custom_product.CustomProductPopup">
         <Dialog title="'Producto personalizado'">
             <div class="p-3">
@@ -11,7 +31,16 @@
 
                 <div class="mb-3">
                     <label>Precio de coste</label>
-                    <input t-model="state.cost" class="form-control" type="number"/>
+                    <input t-model="state.cost" class="form-control" type="number" step="0.01"/>
+                </div>
+
+                <div t-if="!props.calculate" class="mb-3">
+                    <label>Precio de venta final</label>
+                    <input t-model="state.salePrice" class="form-control" type="number" step="0.01"/>
+                </div>
+
+                <div t-if="props.calculate" class="alert alert-info">
+                    El precio final se calculará aplicando un 35% sobre el coste.
                 </div>
             </div>
 

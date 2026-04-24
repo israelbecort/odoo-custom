@@ -6,15 +6,36 @@ import { PosStore } from "@point_of_sale/app/services/pos_store";
 import { Dialog } from "@web/core/dialog/dialog";
 import { makeAwaitable } from "@point_of_sale/app/utils/make_awaitable_dialog";
 
+class AskCalculatePopup extends Component {
+    static template = "pos_custom_product.AskCalculatePopup";
+    static components = { Dialog };
+    static props = ["close", "getPayload"];
+
+    yes() {
+        this.props.getPayload({ calculate: true });
+        this.props.close();
+    }
+
+    no() {
+        this.props.getPayload({ calculate: false });
+        this.props.close();
+    }
+
+    cancel() {
+        this.props.close();
+    }
+}
+
 class CustomProductPopup extends Component {
     static template = "pos_custom_product.CustomProductPopup";
     static components = { Dialog };
-    static props = ["close", "getPayload"];
+    static props = ["close", "getPayload", "calculate"];
 
     setup() {
         this.state = useState({
             description: "",
             cost: "",
+            salePrice: "",
         });
     }
 
@@ -30,9 +51,21 @@ class CustomProductPopup extends Component {
             return;
         }
 
+        let finalPriceWithTax;
+
+        if (this.props.calculate) {
+            finalPriceWithTax = Number((cost * 1.35).toFixed(2));
+        } else {
+            finalPriceWithTax = parseFloat((this.state.salePrice || "").replace(",", "."));
+            if (!finalPriceWithTax || finalPriceWithTax <= 0) {
+                return;
+            }
+        }
+
         this.props.getPayload({
             description,
             cost,
+            finalPriceWithTax,
         });
 
         this.props.close();
@@ -48,16 +81,22 @@ patch(PosStore.prototype, {
             return await super.addLineToCurrentOrder(vals, opts, configure);
         }
 
-        const payload = await makeAwaitable(this.dialog, CustomProductPopup, {});
+        const decision = await makeAwaitable(this.dialog, AskCalculatePopup, {});
+        if (!decision) {
+            return;
+        }
+
+        const payload = await makeAwaitable(this.dialog, CustomProductPopup, {
+            calculate: decision.calculate,
+        });
 
         if (!payload) {
             return;
         }
 
-        // Queremos que coste * 1.35 sea el precio FINAL con IVA incluido.
-        // Como Odoo aplica el IVA después, guardamos el precio base sin IVA.
-        const finalPriceWithTax = Number((payload.cost * 1.35).toFixed(2));
-        const salePrice = Number((finalPriceWithTax / 1.21).toFixed(6));
+        // El precio introducido/calculado es FINAL con IVA incluido.
+        // Odoo necesita precio base sin IVA.
+        const salePrice = Number((payload.finalPriceWithTax / 1.21).toFixed(6));
 
         const line = await super.addLineToCurrentOrder(
             vals,
@@ -71,9 +110,9 @@ patch(PosStore.prototype, {
         if (selectedLine) {
             selectedLine.custom_description = payload.description;
             selectedLine.custom_cost_price = payload.cost;
-        
+
             selectedLine.full_product_name = payload.description;
-        
+
             if (selectedLine.orderDisplayProductName) {
                 selectedLine.orderDisplayProductName.name = payload.description;
             } else {
@@ -81,7 +120,7 @@ patch(PosStore.prototype, {
                     name: payload.description,
                 };
             }
-        
+
             if (typeof selectedLine.set_unit_price === "function") {
                 selectedLine.set_unit_price(salePrice);
             } else {
