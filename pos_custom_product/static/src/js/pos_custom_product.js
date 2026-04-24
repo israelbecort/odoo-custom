@@ -71,13 +71,11 @@ patch(PosStore.prototype, {
         if (selectedLine) {
             selectedLine.custom_description = payload.description;
             selectedLine.custom_cost_price = payload.cost;
-
-            if (typeof selectedLine.set_full_product_name === "function") {
-                selectedLine.set_full_product_name(payload.description);
-            } else {
-                selectedLine.full_product_name = payload.description;
-            }
-
+        
+            selectedLine.full_product_name = payload.description;
+            selectedLine.customer_note = payload.description;
+            selectedLine.note = payload.description;
+        
             if (typeof selectedLine.set_unit_price === "function") {
                 selectedLine.set_unit_price(salePrice);
             } else {
