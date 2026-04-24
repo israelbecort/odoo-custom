@@ -62,15 +62,17 @@ patch(PosStore.prototype, {
             false
         );
 
-        const order = this.get_order();
-        const selectedLine = order?.get_selected_orderline?.();
+        const order = this.selectedOrder;
+        const selectedLine = order?.get_selected_orderline?.() || order?.lines?.at?.(-1);
 
         if (selectedLine) {
             selectedLine.custom_description = payload.description;
             selectedLine.custom_cost_price = payload.cost;
-
+        
             if (typeof selectedLine.set_unit_price === "function") {
                 selectedLine.set_unit_price(salePrice);
+            } else {
+                selectedLine.price_unit = salePrice;
             }
         }
 
