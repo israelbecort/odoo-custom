@@ -3,6 +3,7 @@
 import { patch } from "@web/core/utils/patch";
 import { Component, useState } from "@odoo/owl";
 import { PosStore } from "@point_of_sale/app/services/pos_store";
+import { PosOrderline } from "@point_of_sale/app/models/pos_order_line";
 import { Dialog } from "@web/core/dialog/dialog";
 import { makeAwaitable } from "@point_of_sale/app/utils/make_awaitable_dialog";
 
@@ -94,9 +95,9 @@ patch(PosStore.prototype, {
             return;
         }
 
-        // El precio introducido/calculado es FINAL con IVA incluido.
-        // Odoo necesita precio base sin IVA.
-        const salePrice = Number((payload.finalPriceWithTax / 1.21).toFixed(6));
+        const finalPriceWithTax = Number(payload.finalPriceWithTax.toFixed(2));
+        const salePrice = Number((finalPriceWithTax / 1.21).toFixed(6));
+        const margin = Number((finalPriceWithTax - payload.cost).toFixed(2));
 
         const line = await super.addLineToCurrentOrder(
             vals,
@@ -110,6 +111,7 @@ patch(PosStore.prototype, {
         if (selectedLine) {
             selectedLine.custom_description = payload.description;
             selectedLine.custom_cost_price = payload.cost;
+            selectedLine.custom_margin = margin;
 
             selectedLine.full_product_name = payload.description;
 
@@ -129,5 +131,24 @@ patch(PosStore.prototype, {
         }
 
         return line;
+    },
+});
+
+patch(PosOrderline.prototype, {
+    setup(vals) {
+        super.setup(vals);
+        this.custom_description = vals.custom_description || "";
+        this.custom_cost_price = vals.custom_cost_price || 0;
+        this.custom_margin = vals.custom_margin || 0;
+    },
+
+    serializeForORM(opts = {}) {
+        const data = super.serializeForORM(opts);
+
+        data.custom_description = this.custom_description || "";
+        data.custom_cost_price = this.custom_cost_price || 0;
+        data.custom_margin = this.custom_margin || 0;
+
+        return data;
     },
 });

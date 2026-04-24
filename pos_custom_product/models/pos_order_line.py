@@ -12,6 +12,7 @@ class PosOrderLine(models.Model):
         vals = super()._order_line_fields(line, session_id=session_id)
         vals[2]["custom_description"] = line.get("custom_description", "")
         vals[2]["custom_cost_price"] = line.get("custom_cost_price", 0.0)
+        vals[2]["custom_margin"] = line.get("custom_margin", 0.0)
         return vals
 
     @api.model_create_multi
@@ -20,6 +21,8 @@ class PosOrderLine(models.Model):
 
         for line in lines:
             if line.custom_cost_price:
-                line.custom_margin = line.price_subtotal_incl - line.custom_cost_price
+                line.custom_margin = line.price_subtotal_incl - (
+                    line.custom_cost_price * line.qty
+                )
 
         return lines
