@@ -27,11 +27,12 @@ class PosMarginReport(models.Model):
                     l.full_product_name AS product_name,
                     l.qty AS qty,
                     l.price_subtotal_incl AS total_sales,
-                    COALESCE(l.custom_cost_price, 0) * l.qty AS total_cost,
-                    COALESCE(l.custom_margin, 0) AS total_margin,
+                    COALESCE(NULLIF(l.custom_cost_price, 0), p.standard_price) * l.qty AS total_cost,
+                    l.price_subtotal_incl - (COALESCE(NULLIF(l.custom_cost_price, 0), p.standard_price) * l.qty) AS total_margin,
                     o.id AS order_id
                 FROM pos_order_line l
                 JOIN pos_order o ON o.id = l.order_id
+                JOIN product_product p ON p.id = l.product_id
                 WHERE o.state IN ('paid', 'done', 'invoiced')
             )
         """)
