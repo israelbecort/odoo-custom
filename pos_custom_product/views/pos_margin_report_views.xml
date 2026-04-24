@@ -53,8 +53,8 @@
     </record>
 
     <menuitem id="menu_pos_margin_report"
-              name="Dashboard Margen TPV"
-              parent="point_of_sale.menu_point_root"
-              action="action_pos_margin_report"
-              sequence="80"/>
+          name="Dashboard Margen TPV"
+          parent="base.menu_custom"
+          action="action_pos_margin_report"
+          sequence="80"/>
 </odoo>
