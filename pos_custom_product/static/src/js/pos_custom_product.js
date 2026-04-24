@@ -113,6 +113,9 @@ patch(PosStore.prototype, {
             selectedLine.custom_cost_price = payload.cost;
             selectedLine.custom_margin = margin;
 
+            console.log("CUSTOM LINE BEFORE SAVE", selectedLine);
+            console.log("CUSTOM SERIALIZED", selectedLine.serializeForORM?.());
+
             selectedLine.full_product_name = payload.description;
 
             if (selectedLine.orderDisplayProductName) {
