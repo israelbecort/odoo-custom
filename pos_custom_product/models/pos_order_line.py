@@ -8,6 +8,16 @@ class PosOrderLine(models.Model):
     custom_cost_price = fields.Float(string="Coste personalizado")
     custom_margin = fields.Float(string="Margen personalizado")
 
+    @api.model
+    def _load_pos_data_fields(self, config_id):
+        fields = super()._load_pos_data_fields(config_id)
+        fields += [
+            "custom_description",
+            "custom_cost_price",
+            "custom_margin",
+        ]
+        return fields
+
     def _order_line_fields(self, line, session_id=None):
         vals = super()._order_line_fields(line, session_id=session_id)
         vals[2]["custom_description"] = line.get("custom_description", "")
