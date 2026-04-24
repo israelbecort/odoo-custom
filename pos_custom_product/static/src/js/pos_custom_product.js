@@ -23,8 +23,8 @@ class CustomProductPopup extends Component {
     }
 
     confirm() {
-        const cost = parseFloat((this.state.cost || "").replace(",", "."));
         const description = this.state.description.trim();
+        const cost = parseFloat((this.state.cost || "").replace(",", "."));
 
         if (!description || !cost || cost <= 0) {
             return;
@@ -54,7 +54,10 @@ patch(PosStore.prototype, {
             return;
         }
 
-        const salePrice = Number((payload.cost * 1.35).toFixed(2));
+        // Queremos que coste * 1.35 sea el precio FINAL con IVA incluido.
+        // Como Odoo aplica el IVA después, guardamos el precio base sin IVA.
+        const finalPriceWithTax = Number((payload.cost * 1.35).toFixed(2));
+        const salePrice = Number((finalPriceWithTax / 1.21).toFixed(6));
 
         const line = await super.addLineToCurrentOrder(
             vals,
@@ -68,7 +71,13 @@ patch(PosStore.prototype, {
         if (selectedLine) {
             selectedLine.custom_description = payload.description;
             selectedLine.custom_cost_price = payload.cost;
-        
+
+            if (typeof selectedLine.set_full_product_name === "function") {
+                selectedLine.set_full_product_name(payload.description);
+            } else {
+                selectedLine.full_product_name = payload.description;
+            }
+
             if (typeof selectedLine.set_unit_price === "function") {
                 selectedLine.set_unit_price(salePrice);
             } else {
