@@ -9,7 +9,7 @@ import { makeAwaitable } from "@point_of_sale/app/utils/make_awaitable_dialog";
 class CustomProductPopup extends Component {
     static template = "pos_custom_product.CustomProductPopup";
     static components = { Dialog };
-    static props = ["close"];
+    static props = ["close", "getPayload"];
 
     setup() {
         this.state = useState({
