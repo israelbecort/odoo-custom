@@ -1,0 +1,60 @@
+<odoo>
+    <record id="view_pos_margin_report_list" model="ir.ui.view">
+        <field name="name">pos.margin.report.list</field>
+        <field name="model">pos.margin.report</field>
+        <field name="arch" type="xml">
+            <list string="Informe de márgenes TPV">
+                <field name="date_order"/>
+                <field name="product_name"/>
+                <field name="qty"/>
+                <field name="total_sales" sum="Ventas"/>
+                <field name="total_cost" sum="Coste"/>
+                <field name="total_margin" sum="Margen"/>
+                <field name="order_id"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_pos_margin_report_pivot" model="ir.ui.view">
+        <field name="name">pos.margin.report.pivot</field>
+        <field name="model">pos.margin.report</field>
+        <field name="arch" type="xml">
+            <pivot string="Márgenes TPV">
+                <field name="date_order" type="row" interval="day"/>
+                <field name="product_id" type="row"/>
+                <field name="qty" type="measure"/>
+                <field name="total_sales" type="measure"/>
+                <field name="total_cost" type="measure"/>
+                <field name="total_margin" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="view_pos_margin_report_graph" model="ir.ui.view">
+        <field name="name">pos.margin.report.graph</field>
+        <field name="model">pos.margin.report</field>
+        <field name="arch" type="xml">
+            <graph string="Margen TPV" type="bar">
+                <field name="date_order" interval="day"/>
+                <field name="total_margin" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="action_pos_margin_report" model="ir.actions.act_window">
+        <field name="name">Dashboard Margen TPV</field>
+        <field name="res_model">pos.margin.report</field>
+        <field name="view_mode">pivot,graph,list</field>
+        <field name="context">
+            {
+                "search_default_group_by_day": 1
+            }
+        </field>
+    </record>
+
+    <menuitem id="menu_pos_margin_report"
+              name="Dashboard Margen TPV"
+              parent="point_of_sale.menu_point_root"
+              action="action_pos_margin_report"
+              sequence="80"/>
+</odoo>
