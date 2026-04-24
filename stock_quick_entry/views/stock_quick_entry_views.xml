@@ -1,0 +1,68 @@
+<odoo>
+    <record id="view_stock_quick_entry_tree" model="ir.ui.view">
+        <field name="name">stock.quick.entry.tree</field>
+        <field name="model">stock.quick.entry</field>
+        <field name="arch" type="xml">
+            <list create="1" edit="1">
+                <field name="create_date"/>
+                <field name="product_id"/>
+                <field name="barcode"/>
+                <field name="qty"/>
+                <field name="old_cost"/>
+                <field name="new_cost"/>
+                <field name="old_price"/>
+                <field name="new_price"/>
+                <field name="applied"/>
+                <button name="action_apply"
+                        type="object"
+                        string="Aplicar"
+                        class="btn-primary"
+                        invisible="applied"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_stock_quick_entry_form" model="ir.ui.view">
+        <field name="name">stock.quick.entry.form</field>
+        <field name="model">stock.quick.entry</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_apply"
+                            type="object"
+                            string="Aplicar"
+                            class="btn-primary"
+                            invisible="applied"/>
+                </header>
+                <sheet>
+                    <group>
+                        <field name="product_id"/>
+                        <field name="barcode"/>
+                        <field name="qty"/>
+                    </group>
+                    <group>
+                        <field name="old_cost"/>
+                        <field name="new_cost"/>
+                        <field name="old_price"/>
+                        <field name="new_price"/>
+                    </group>
+                    <group>
+                        <field name="applied"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_stock_quick_entry" model="ir.actions.act_window">
+        <field name="name">Entrada rápida de stock</field>
+        <field name="res_model">stock.quick.entry</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem id="menu_stock_quick_entry"
+              name="Entrada rápida de stock"
+              parent="stock.menu_stock_root"
+              action="action_stock_quick_entry"
+              sequence="20"/>
+</odoo>
