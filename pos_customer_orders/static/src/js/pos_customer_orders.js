@@ -153,7 +153,16 @@ patch(ControlButtons.prototype, {
         const advanceLine = order.getSelectedOrderline();
 
         if (advanceLine) {
+            if (typeof advanceLine.setUnitPrice === "function") {
+                advanceLine.setUnitPrice(payload.paid_amount);
+            } else if (typeof advanceLine.set_unit_price === "function") {
+                advanceLine.set_unit_price(payload.paid_amount);
+            } else {
+                advanceLine.price_unit = payload.paid_amount;
+            }
+
             advanceLine.full_product_name = `Anticipo ${result.name}`;
+
             advanceLine.customer_note =
                 `Encargo ${result.name} - Total: ${Number(result.total_amount).toFixed(2)}€ - Pendiente: ${Number(result.pending_amount).toFixed(2)}€`;
 
