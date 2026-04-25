@@ -1,0 +1,64 @@
+<odoo>
+    <template id="report_invoice_customer_order_block"
+              inherit_id="account.report_invoice_document">
+
+        <xpath expr="//table[@name='invoice_line_table']" position="after">
+            <t t-if="o.is_customer_order">
+                <div class="mt-4 mb-4">
+                    <h4>
+                        Detalle del encargo <span t-esc="o.customer_order_ref"/>
+                    </h4>
+
+                    <table class="table table-sm o_main_table">
+                        <thead>
+                            <tr>
+                                <th>Producto encargado</th>
+                                <th class="text-end">Cantidad</th>
+                                <th class="text-end">Importe</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr t-foreach="o.get_customer_order_lines_for_report()" t-as="line">
+                                <td>
+                                    <span t-esc="line.get('description')"/>
+                                </td>
+                                <td class="text-end">
+                                    <span t-esc="line.get('qty')"/>
+                                </td>
+                                <td class="text-end">
+                                    <span t-esc="'%.2f €' % line.get('price_subtotal_incl', 0)"/>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="row justify-content-end">
+                        <div class="col-5">
+                            <table class="table table-sm">
+                                <tr>
+                                    <td><strong>Total encargo</strong></td>
+                                    <td class="text-end">
+                                        <span t-esc="'%.2f €' % o.customer_order_total"/>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Pagado</strong></td>
+                                    <td class="text-end">
+                                        <span t-esc="'%.2f €' % o.customer_order_paid"/>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Pendiente</strong></td>
+                                    <td class="text-end">
+                                        <span t-esc="'%.2f €' % o.customer_order_pending"/>
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </t>
+        </xpath>
+
+    </template>
+</odoo>

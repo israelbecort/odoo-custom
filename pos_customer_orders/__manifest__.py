@@ -8,6 +8,7 @@
         "security/ir.model.access.csv",
         "data/sequence.xml",
         "views/pos_customer_order_views.xml",
+        "views/account_move_report.xml",
     ],
     "assets": {
         "point_of_sale._assets_pos": [
