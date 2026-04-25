@@ -5,6 +5,7 @@ import { Component, useState } from "@odoo/owl";
 import { ControlButtons } from "@point_of_sale/app/screens/product_screen/control_buttons/control_buttons";
 import { Dialog } from "@web/core/dialog/dialog";
 import { makeAwaitable } from "@point_of_sale/app/utils/make_awaitable_dialog";
+import { PartnerList } from "@point_of_sale/app/screens/partner_list/partner_list";
 
 class CustomerOrderPopup extends Component {
     static template = "pos_customer_orders.CustomerOrderPopup";
@@ -13,11 +14,9 @@ class CustomerOrderPopup extends Component {
 
     setup() {
         this.state = useState({
-            partnerName: "",
-            phone: "",
-            note: "",
-            totalAmount: "",
             paidAmount: "",
+            expectedDate: "",
+            note: "",
         });
     }
 
@@ -26,27 +25,16 @@ class CustomerOrderPopup extends Component {
     }
 
     confirm() {
-        const totalAmount = parseFloat((this.state.totalAmount || "").replace(",", "."));
         const paidAmount = parseFloat((this.state.paidAmount || "").replace(",", "."));
 
-        if (!this.state.partnerName.trim() || !this.state.note.trim()) {
-            return;
-        }
-
-        if (!totalAmount || totalAmount <= 0) {
-            return;
-        }
-
-        if (!paidAmount || paidAmount <= 0 || paidAmount > totalAmount) {
+        if (!paidAmount || paidAmount <= 0) {
             return;
         }
 
         this.props.getPayload({
-            partner_name: this.state.partnerName.trim(),
-            phone: this.state.phone.trim(),
-            note: this.state.note.trim(),
-            total_amount: totalAmount,
             paid_amount: paidAmount,
+            expected_date: this.state.expectedDate || false,
+            note: this.state.note.trim(),
         });
 
         this.props.close();
@@ -55,16 +43,53 @@ class CustomerOrderPopup extends Component {
 
 patch(ControlButtons.prototype, {
     async clickCustomerOrder() {
+        const order = this.pos.getOrder();
+
+        if (!order || order.isEmpty()) {
+            this.notification.add("Añada productos al ticket antes de crear un encargo.", {
+                type: "warning",
+            });
+            return;
+        }
+
+        let partner = order.getPartner();
+
+        if (!partner) {
+            partner = await makeAwaitable(this.dialog, PartnerList, {
+                partner: null,
+            });
+
+            if (!partner) {
+                return;
+            }
+
+            order.setPartner(partner);
+        }
+
         const payload = await makeAwaitable(this.dialog, CustomerOrderPopup, {});
 
         if (!payload) {
             return;
         }
 
+        const lines = order.getOrderlines().map((line) => ({
+            product_id: line.product_id?.id,
+            description: line.full_product_name || line.product_id?.display_name || "",
+            qty: line.qty,
+            price_unit: line.price_unit,
+            price_subtotal_incl: line.getPriceWithTax(),
+        }));
+
         const result = await this.env.services.orm.call(
             "pos.customer.order",
             "create_from_pos",
-            [payload]
+            [{
+                partner_id: partner.id,
+                lines,
+                paid_amount: payload.paid_amount,
+                expected_date: payload.expected_date,
+                note: payload.note,
+            }]
         );
 
         await this.pos.loadNewProducts([
@@ -80,6 +105,10 @@ patch(ControlButtons.prototype, {
             return;
         }
 
+        for (const line of [...order.getOrderlines()]) {
+            order.removeOrderline(line);
+        }
+
         await this.pos.addLineToCurrentOrder(
             {
                 product_id: product,
@@ -91,16 +120,15 @@ patch(ControlButtons.prototype, {
             false
         );
 
-        const order = this.pos.getOrder();
-        const line = order?.getSelectedOrderline();
+        const advanceLine = order.getSelectedOrderline();
 
-        if (line) {
-            line.full_product_name = `Anticipo ${result.name}`;
-            line.customer_note = payload.note;
-            line.note = `Encargo ${result.name} - Total: ${payload.total_amount}€ - Pendiente: ${result.pending_amount}€`;
+        if (advanceLine) {
+            advanceLine.full_product_name = `Anticipo ${result.name}`;
+            advanceLine.customer_note = payload.note || "";
+            advanceLine.note = `Encargo ${result.name} - Total: ${result.total_amount}€ - Pendiente: ${result.pending_amount}€`;
 
-            if (line.orderDisplayProductName) {
-                line.orderDisplayProductName.name = `Anticipo ${result.name}`;
+            if (advanceLine.orderDisplayProductName) {
+                advanceLine.orderDisplayProductName.name = `Anticipo ${result.name}`;
             }
         }
 
