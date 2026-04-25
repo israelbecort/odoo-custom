@@ -42,16 +42,15 @@ class CustomerOrderPopup extends Component {
 }
 
 function getLineSubtotalIncl(line) {
-    if (typeof line.get_all_prices === "function") {
-        const prices = line.get_all_prices();
-        return prices.priceWithTax || prices.priceWithTaxBeforeDiscount || 0;
-    }
+    const qty = line.qty || 1;
+    const priceUnit = line.price_unit || 0;
 
-    if (typeof line.price_subtotal_incl === "number" && line.price_subtotal_incl > 0) {
-        return line.price_subtotal_incl;
-    }
+    const taxes = line.product_id?.taxes_id || [];
+    const taxAmount = taxes.reduce((sum, tax) => {
+        return sum + (tax.amount || 0);
+    }, 0);
 
-    return (line.price_unit || 0) * (line.qty || 1);
+    return priceUnit * qty * (1 + taxAmount / 100);
 }
 
 patch(ControlButtons.prototype, {
@@ -86,17 +85,6 @@ patch(ControlButtons.prototype, {
         }
 
         const lines = order.getOrderlines().map((line) => {
-            console.log("LINE DEBUG", {
-                line,
-                price_unit: line.price_unit,
-                qty: line.qty,
-                price_subtotal: line.price_subtotal,
-                price_subtotal_incl: line.price_subtotal_incl,
-                get_all_prices: typeof line.get_all_prices,
-                getAllPrices: typeof line.getAllPrices,
-                all_prices: typeof line.get_all_prices === "function" ? line.get_all_prices() : null,
-            });
-
             const qty = line.qty || 1;
             const priceUnit = line.price_unit || 0;
             const subtotalIncl = Number(getLineSubtotalIncl(line).toFixed(2));
