@@ -7,6 +7,7 @@ import { Dialog } from "@web/core/dialog/dialog";
 import { makeAwaitable } from "@point_of_sale/app/utils/make_awaitable_dialog";
 import { PartnerList } from "@point_of_sale/app/screens/partner_list/partner_list";
 import { PosOrder } from "@point_of_sale/app/models/pos_order";
+import { TicketScreen } from "@point_of_sale/app/screens/ticket_screen/ticket_screen";
 
 class CustomerOrderPopup extends Component {
     static template = "pos_customer_orders.CustomerOrderPopup";
@@ -252,5 +253,50 @@ patch(ControlButtons.prototype, {
         this.notification.add(`Encargo ${result.name} creado.`, {
             type: "success",
         });
+    },
+});
+
+patch(TicketScreen.prototype, {
+    async print(order) {
+        if (order?.id) {
+            const data = await this.env.services.orm.read(
+                "pos.order",
+                [order.id],
+                [
+                    "is_customer_order",
+                    "customer_order_ref",
+                    "customer_order_total",
+                    "customer_order_paid",
+                    "customer_order_pending",
+                    "customer_order_lines_json",
+                ]
+            );
+
+            const posOrder = data?.[0];
+
+            if (posOrder?.is_customer_order) {
+                let customerOrderLines = [];
+
+                try {
+                    customerOrderLines = posOrder.customer_order_lines_json
+                        ? JSON.parse(posOrder.customer_order_lines_json)
+                        : [];
+                } catch {
+                    customerOrderLines = [];
+                }
+
+                order.uiState = order.uiState || {};
+                order.uiState.is_customer_order = true;
+                order.uiState.customer_order_data = {
+                    name: posOrder.customer_order_ref,
+                    total: Number(posOrder.customer_order_total || 0),
+                    paid: Number(posOrder.customer_order_paid || 0),
+                    pending: Number(posOrder.customer_order_pending || 0),
+                    lines: customerOrderLines,
+                };
+            }
+        }
+
+        await super.print(order);
     },
 });
