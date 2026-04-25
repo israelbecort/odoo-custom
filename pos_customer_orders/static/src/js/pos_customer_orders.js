@@ -89,12 +89,15 @@ patch(ControlButtons.prototype, {
         };
     });
 
+        const totalAmount = order.getTotalWithTax();
+
         const result = await this.env.services.orm.call(
             "pos.customer.order",
             "create_from_pos",
             [{
                 partner_id: partner.id,
                 lines,
+                total_amount: totalAmount,
                 paid_amount: payload.paid_amount,
                 expected_date: payload.expected_date,
                 note: payload.note,

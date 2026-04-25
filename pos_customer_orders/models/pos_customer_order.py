@@ -65,7 +65,7 @@ class PosCustomerOrder(models.Model):
         if not lines:
             raise UserError("No hay líneas en el ticket.")
 
-        total_amount = sum(float(line.get("price_subtotal_incl") or 0) for line in lines)
+        total_amount = float(data.get("total_amount") or 0)
 
         if total_amount <= 0:
             raise UserError("El total del encargo debe ser mayor que 0.")
