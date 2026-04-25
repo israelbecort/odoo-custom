@@ -42,14 +42,15 @@ class PosCustomerOrder(models.Model):
         for rec in self:
             rec.pending_amount = rec.total_amount - rec.paid_amount
 
-    @api.model
-    def create(self, vals):
-        if vals.get("name", "Nuevo") == "Nuevo":
-            vals["name"] = (
-                self.env["ir.sequence"].next_by_code("pos.customer.order")
-                or "ENC/0001"
-            )
-        return super().create(vals)
+    @api.model_create_multi
+    def create(self, vals_list):
+        for vals in vals_list:
+            if vals.get("name", "Nuevo") == "Nuevo":
+                vals["name"] = (
+                    self.env["ir.sequence"].next_by_code("pos.customer.order")
+                    or "ENC/0001"
+                )
+        return super().create(vals_list)
 
     @api.model
     def create_from_pos(self, data):
