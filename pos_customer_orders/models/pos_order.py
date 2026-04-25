@@ -11,6 +11,24 @@ class PosOrder(models.Model):
     customer_order_pending = fields.Float(string="Pendiente encargo")
     customer_order_lines_json = fields.Text(string="Líneas encargo JSON")
 
+    def _load_pos_data_fields(self, config_id):
+        fields_list = super()._load_pos_data_fields(config_id)
+
+        extra_fields = [
+            "is_customer_order",
+            "customer_order_ref",
+            "customer_order_total",
+            "customer_order_paid",
+            "customer_order_pending",
+            "customer_order_lines_json",
+        ]
+
+        for field in extra_fields:
+            if field not in fields_list:
+                fields_list.append(field)
+
+        return fields_list
+
     def _create_invoice(self, move_vals):
         invoice = super()._create_invoice(move_vals)
 
