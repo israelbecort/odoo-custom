@@ -152,6 +152,7 @@ patch(ControlButtons.prototype, {
             total: Number(result.total_amount),
             paid: Number(result.paid_amount),
             pending: Number(result.pending_amount),
+            lines: lines,
         };
 
         await this.pos.loadNewProducts([
@@ -167,13 +168,17 @@ patch(ControlButtons.prototype, {
             return;
         }
 
+        for (const line of [...order.getOrderlines()]) {
+            order.removeOrderline(line);
+        }
+
         await this.pos.addLineToCurrentOrder(
             {
                 product_id: product,
                 product_tmpl_id: product.product_tmpl_id,
             },
             {
-                price: -Number(result.pending_amount),
+                price: payload.paid_amount,
             },
             false
         );
@@ -181,20 +186,18 @@ patch(ControlButtons.prototype, {
         const advanceLine = order.getSelectedOrderline();
 
         if (advanceLine) {
-            const pendingAmount = -Number(result.pending_amount);
-
             if (typeof advanceLine.setUnitPrice === "function") {
-                advanceLine.setUnitPrice(pendingAmount);
+                advanceLine.setUnitPrice(payload.paid_amount);
             } else if (typeof advanceLine.set_unit_price === "function") {
-                advanceLine.set_unit_price(pendingAmount);
+                advanceLine.set_unit_price(payload.paid_amount);
             } else {
-                advanceLine.price_unit = pendingAmount;
+                advanceLine.price_unit = payload.paid_amount;
             }
 
-            advanceLine.full_product_name = `Pendiente ${result.name}`;
+            advanceLine.full_product_name = `Anticipo ${result.name}`;
 
             if (advanceLine.orderDisplayProductName) {
-                advanceLine.orderDisplayProductName.name = `Pendiente ${result.name}`;
+                advanceLine.orderDisplayProductName.name = `Anticipo ${result.name}`;
             }
         }
 

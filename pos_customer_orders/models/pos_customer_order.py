@@ -112,11 +112,11 @@ class PosCustomerOrder(models.Model):
         })
 
         product = self.env["product.product"].search([
-            ("default_code", "=", "PENDIENTE_ENCARGO")
+            ("default_code", "=", "ANTICIPO")
         ], limit=1)
 
         if not product:
-            raise UserError("No existe el producto con referencia PENDIENTE_ENCARGO.")
+            raise UserError("No existe el producto con referencia ANTICIPO.")
 
         return {
             "id": order.id,
