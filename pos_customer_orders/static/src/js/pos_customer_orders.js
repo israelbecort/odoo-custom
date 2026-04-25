@@ -42,20 +42,13 @@ class CustomerOrderPopup extends Component {
 }
 
 function getLineSubtotalIncl(line) {
-    if (typeof line.price_subtotal_incl === "number") {
-        return line.price_subtotal_incl;
-    }
-
     if (typeof line.get_all_prices === "function") {
         const prices = line.get_all_prices();
-        return prices.priceWithTax || prices.price_without_tax || 0;
+        return prices.priceWithTax || prices.priceWithTaxBeforeDiscount || 0;
     }
 
-    if (typeof line.getDisplayData === "function") {
-        const data = line.getDisplayData();
-        if (typeof data.price === "number") {
-            return data.price;
-        }
+    if (typeof line.price_subtotal_incl === "number" && line.price_subtotal_incl > 0) {
+        return line.price_subtotal_incl;
     }
 
     return (line.price_unit || 0) * (line.qty || 1);
