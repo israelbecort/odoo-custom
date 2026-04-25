@@ -146,8 +146,8 @@ patch(ControlButtons.prototype, {
             }]
         );
 
-        order.is_customer_order = true;
-        order.customer_order_data = {
+        order.uiState.is_customer_order = true;
+        order.uiState.customer_order_data = {
             name: result.name,
             total: Number(result.total_amount),
             paid: Number(result.paid_amount),

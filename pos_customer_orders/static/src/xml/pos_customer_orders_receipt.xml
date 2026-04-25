@@ -2,34 +2,32 @@
 <templates id="template" xml:space="preserve">
 
     <t t-inherit="point_of_sale.OrderReceipt" t-inherit-mode="extension">
-
         <xpath expr="//div[contains(@class, 'receipt-total')]" position="after">
 
-            <t t-if="order.is_customer_order and order.customer_order_data">
+            <t t-if="order.uiState.is_customer_order and order.uiState.customer_order_data">
                 <div class="pt-2 mt-2 border-top border-bottom pb-2">
                     <div class="fw-bolder text-center">
-                        Encargo <t t-esc="order.customer_order_data.name"/>
+                        Encargo <t t-esc="order.uiState.customer_order_data.name"/>
                     </div>
 
                     <div class="pos-receipt-amount">
                         <span>Total encargo</span>
-                        <span t-out="formatCurrency(order.customer_order_data.total)" class="pos-receipt-right-align font-monospace"/>
+                        <span t-out="formatCurrency(order.uiState.customer_order_data.total)" class="pos-receipt-right-align font-monospace"/>
                     </div>
 
                     <div class="pos-receipt-amount">
                         <span>Pagado</span>
-                        <span t-out="formatCurrency(order.customer_order_data.paid)" class="pos-receipt-right-align font-monospace"/>
+                        <span t-out="formatCurrency(order.uiState.customer_order_data.paid)" class="pos-receipt-right-align font-monospace"/>
                     </div>
 
                     <div class="pos-receipt-amount fw-bolder">
                         <span>Pendiente</span>
-                        <span t-out="formatCurrency(order.customer_order_data.pending)" class="pos-receipt-right-align font-monospace"/>
+                        <span t-out="formatCurrency(order.uiState.customer_order_data.pending)" class="pos-receipt-right-align font-monospace"/>
                     </div>
                 </div>
             </t>
 
         </xpath>
-
     </t>
 
 </templates>
