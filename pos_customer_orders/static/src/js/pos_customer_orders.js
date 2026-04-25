@@ -93,22 +93,27 @@ patch(ControlButtons.prototype, {
         }
 
         const lines = order.getOrderlines().map((line) => {
-            const qty = line.qty || 1;
-            const priceUnit = line.price_unit || 0;
-            const subtotalIncl = Number(getLineSubtotalIncl(line).toFixed(2));
+        const qty = line.qty || 1;
+        const priceUnit = line.price_unit || 0;
+        const subtotalIncl = Number(getLineSubtotalIncl(line).toFixed(2));
 
-            return {
-                product_id: line.product_id?.id,
-                description: line.full_product_name || line.product_id?.display_name || "",
-                qty: qty,
-                price_unit: priceUnit,
-                price_subtotal_incl: subtotalIncl,
-            };
-        });
+        return {
+            product_id: line.product_id?.id,
+            description: line.full_product_name || line.product_id?.display_name || "",
+            qty: qty,
+            price_unit: priceUnit,
+            price_subtotal_incl: subtotalIncl,
+        };
+    });
 
-        const totalAmount = Number(
-            lines.reduce((sum, line) => sum + line.price_subtotal_incl, 0).toFixed(2)
-        );
+    const totalAmount = Number(
+        lines.reduce((sum, line) => sum + line.price_subtotal_incl, 0).toFixed(2)
+    );
+
+    console.log("CUSTOM ORDER RAW LINES", order.getOrderlines());
+    console.log("CUSTOM ORDER LINES", lines);
+    console.log("CUSTOM ORDER TOTAL", totalAmount);
+    console.log("CUSTOM ORDER PAID", payload.paid_amount);
 
         if (payload.paid_amount > totalAmount) {
             this.notification.add("El anticipo no puede superar el total del encargo.", {
