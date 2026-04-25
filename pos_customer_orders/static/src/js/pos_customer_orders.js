@@ -68,6 +68,8 @@ patch(PosOrder.prototype, {
     setup(vals) {
         super.setup(vals);
 
+        this.uiState = this.uiState || {};
+
         if (this.is_customer_order) {
             this.uiState.is_customer_order = true;
             this.uiState.customer_order_data = {
@@ -81,7 +83,6 @@ patch(PosOrder.prototype, {
             };
         }
     },
-
     serializeForORM(opts = {}) {
         const data = super.serializeForORM(opts);
 
