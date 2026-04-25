@@ -21,6 +21,26 @@
         <field name="model">pos.customer.order</field>
         <field name="arch" type="xml">
             <form string="Encargo">
+                <header>
+                    <button name="action_mark_done"
+                            type="object"
+                            string="Marcar entregado"
+                            class="btn-primary"
+                            invisible="state != 'draft'"/>
+
+                    <button name="action_cancel"
+                            type="object"
+                            string="Cancelar"
+                            invisible="state == 'cancel'"/>
+
+                    <button name="action_back_to_draft"
+                            type="object"
+                            string="Volver a pendiente"
+                            invisible="state == 'draft'"/>
+
+                    <field name="state" widget="statusbar"
+                        statusbar_visible="draft,done,cancel"/>
+                </header>
                 <sheet>
                     <group>
                         <field name="name" readonly="1"/>
