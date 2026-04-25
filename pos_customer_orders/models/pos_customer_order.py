@@ -31,11 +31,16 @@ class PosCustomerOrder(models.Model):
     state = fields.Selection(
         [
             ("draft", "Pendiente"),
+            ("received", "Mercancía recibida"),
             ("done", "Entregado"),
             ("cancel", "Cancelado"),
         ],
         default="draft",
     )
+
+    def action_mark_received(self):
+        for rec in self:
+            rec.state = "received"
 
     def action_mark_done(self):
         for rec in self:

@@ -22,11 +22,17 @@
         <field name="arch" type="xml">
             <form string="Encargo">
                 <header>
+                    <button name="action_mark_received"
+                            type="object"
+                            string="Mercancía recibida"
+                            class="btn-primary"
+                            invisible="state != 'draft'"/>
+
                     <button name="action_mark_done"
                             type="object"
                             string="Marcar entregado"
                             class="btn-primary"
-                            invisible="state != 'draft'"/>
+                            invisible="state != 'received'"/>
 
                     <button name="action_cancel"
                             type="object"
@@ -38,8 +44,9 @@
                             string="Volver a pendiente"
                             invisible="state == 'draft'"/>
 
-                    <field name="state" widget="statusbar"
-                        statusbar_visible="draft,done,cancel"/>
+                    <field name="state"
+                        widget="statusbar"
+                        statusbar_visible="draft,received,done,cancel"/>
                 </header>
                 <sheet>
                     <group>
