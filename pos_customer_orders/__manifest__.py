@@ -9,6 +9,12 @@
         "data/sequence.xml",
         "views/pos_customer_order_views.xml",
     ],
+    "assets": {
+        "point_of_sale._assets_pos": [
+            "pos_customer_orders/static/src/js/pos_customer_orders.js",
+            "pos_customer_orders/static/src/xml/pos_customer_orders.xml",
+        ],
+    },
     "installable": True,
     "application": False,
     "license": "LGPL-3",

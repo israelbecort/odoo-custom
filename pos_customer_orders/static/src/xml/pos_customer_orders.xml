@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates id="template" xml:space="preserve">
+
+    <t t-name="pos_customer_orders.CustomerOrderPopup">
+        <Dialog title="'Nuevo encargo'">
+            <div class="p-3">
+
+                <div class="mb-3">
+                    <label>Cliente</label>
+                    <input class="form-control" t-model="state.partnerName"/>
+                </div>
+
+                <div class="mb-3">
+                    <label>Teléfono</label>
+                    <input class="form-control" t-model="state.phone"/>
+                </div>
+
+                <div class="mb-3">
+                    <label>Descripción del encargo</label>
+                    <textarea class="form-control" rows="3" t-model="state.note"/>
+                </div>
+
+                <div class="mb-3">
+                    <label>Total encargo</label>
+                    <input class="form-control" type="number" step="0.01" t-model="state.totalAmount"/>
+                </div>
+
+                <div class="mb-3">
+                    <label>Anticipo pagado</label>
+                    <input class="form-control" type="number" step="0.01" t-model="state.paidAmount"/>
+                </div>
+
+            </div>
+
+            <t t-set-slot="footer">
+                <button class="btn btn-secondary" t-on-click="cancel">Cancelar</button>
+                <button class="btn btn-primary" t-on-click="confirm">Crear encargo</button>
+            </t>
+        </Dialog>
+    </t>
+
+    <t t-inherit="point_of_sale.ControlButtons" t-inherit-mode="extension">
+        <xpath expr="//SelectPartnerButton" position="after">
+            <button t-if="!props.showRemainingButtons"
+                    class="btn btn-secondary btn-lg border-0 text-truncate"
+                    t-on-click="() => this.clickCustomerOrder()">
+                <i class="fa fa-clipboard me-1"/>
+                Encargo
+            </button>
+        </xpath>
+    </t>
+
+</templates>
