@@ -73,6 +73,7 @@ patch(PosOrder.prototype, {
         const linesJson = this.customer_order_lines_json || vals?.customer_order_lines_json;
 
         if (this.is_customer_order || vals?.is_customer_order) {
+            console.log("LOADED CUSTOMER ORDER DATA", this.uiState.customer_order_data);
             let customerOrderLines = [];
 
             try {
