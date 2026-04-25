@@ -159,8 +159,7 @@ patch(ControlButtons.prototype, {
 
         if (advanceLine) {
             advanceLine.full_product_name = `Anticipo ${result.name}`;
-            advanceLine.customer_note = payload.note || "";
-            advanceLine.note = `Encargo ${result.name} - Total: ${result.total_amount}€ - Pendiente: ${result.pending_amount}€`;
+            advanceLine.customer_note = `Encargo ${result.name} - Total: ${result.total_amount}€ - Pendiente: ${result.pending_amount}€`;
 
             if (advanceLine.orderDisplayProductName) {
                 advanceLine.orderDisplayProductName.name = `Anticipo ${result.name}`;
