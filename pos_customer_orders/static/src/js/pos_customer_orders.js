@@ -10,18 +10,27 @@ import { PartnerList } from "@point_of_sale/app/screens/partner_list/partner_lis
 class CustomerOrderPopup extends Component {
     static template = "pos_customer_orders.CustomerOrderPopup";
     static components = { Dialog };
-    static props = ["close", "getPayload"];
+    static props = ["close", "getPayload", "partner", "selectPartner"];
 
     setup() {
         this.state = useState({
             paidAmount: "",
             expectedDate: "",
             note: "",
+            partner: this.props.partner,
         });
     }
 
     cancel() {
         this.props.close();
+    }
+
+    async changePartner() {
+        const selectedPartner = await this.props.selectPartner(this.state.partner);
+
+        if (selectedPartner) {
+            this.state.partner = selectedPartner;
+        }
     }
 
     confirm() {
@@ -32,6 +41,7 @@ class CustomerOrderPopup extends Component {
         }
 
         this.props.getPayload({
+            partner_id: this.state.partner.id,
             paid_amount: paidAmount,
             expected_date: this.state.expectedDate || false,
             note: this.state.note.trim(),
@@ -78,7 +88,21 @@ patch(ControlButtons.prototype, {
             order.setPartner(partner);
         }
 
-        const payload = await makeAwaitable(this.dialog, CustomerOrderPopup, {});
+        const payload = await makeAwaitable(this.dialog, CustomerOrderPopup, {
+            partner,
+            selectPartner: async (currentPartner) => {
+                const selectedPartner = await makeAwaitable(this.dialog, PartnerList, {
+                    partner: currentPartner,
+                });
+
+                if (selectedPartner) {
+                    partner = selectedPartner;
+                    order.setPartner(partner);
+                }
+
+                return partner;
+            },
+        });
 
         if (!payload) {
             return;
@@ -113,7 +137,7 @@ patch(ControlButtons.prototype, {
             "pos.customer.order",
             "create_from_pos",
             [{
-                partner_id: partner.id,
+                partner_id: payload.partner_id,
                 lines,
                 total_amount: totalAmount,
                 paid_amount: payload.paid_amount,
