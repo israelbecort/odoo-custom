@@ -41,6 +41,26 @@ class CustomerOrderPopup extends Component {
     }
 }
 
+function getLineSubtotalIncl(line) {
+    if (typeof line.price_subtotal_incl === "number") {
+        return line.price_subtotal_incl;
+    }
+
+    if (typeof line.get_all_prices === "function") {
+        const prices = line.get_all_prices();
+        return prices.priceWithTax || prices.price_without_tax || 0;
+    }
+
+    if (typeof line.getDisplayData === "function") {
+        const data = line.getDisplayData();
+        if (typeof data.price === "number") {
+            return data.price;
+        }
+    }
+
+    return (line.price_unit || 0) * (line.qty || 1);
+}
+
 patch(ControlButtons.prototype, {
     async clickCustomerOrder() {
         const order = this.pos.getOrder();
@@ -73,28 +93,29 @@ patch(ControlButtons.prototype, {
         }
 
         const lines = order.getOrderlines().map((line) => {
-        const qty = line.qty || 1;
-        const priceUnit = line.price_unit || 0;
-        const subtotalIncl =
-            line.price_subtotal_incl ||
-            line.price_subtotal ||
-            (priceUnit * qty);
+            const qty = line.qty || 1;
+            const priceUnit = line.price_unit || 0;
+            const subtotalIncl = Number(getLineSubtotalIncl(line).toFixed(2));
 
-        return {
-            product_id: line.product_id?.id,
-            description: line.full_product_name || line.product_id?.display_name || "",
-            qty: qty,
-            price_unit: priceUnit,
-            price_subtotal_incl: subtotalIncl,
-        };
-    });
+            return {
+                product_id: line.product_id?.id,
+                description: line.full_product_name || line.product_id?.display_name || "",
+                qty: qty,
+                price_unit: priceUnit,
+                price_subtotal_incl: subtotalIncl,
+            };
+        });
 
-        const totalAmount =
-            order.amount_total ||
-            order.get_total_with_tax?.() ||
-            order.getTotalWithTax?.() ||
-            0;
-        console.log("CUSTOM ORDER TOTAL", totalAmount, order);
+        const totalAmount = Number(
+            lines.reduce((sum, line) => sum + line.price_subtotal_incl, 0).toFixed(2)
+        );
+
+        if (payload.paid_amount > totalAmount) {
+            this.notification.add("El anticipo no puede superar el total del encargo.", {
+                type: "warning",
+            });
+            return;
+        }
 
         const result = await this.env.services.orm.call(
             "pos.customer.order",
