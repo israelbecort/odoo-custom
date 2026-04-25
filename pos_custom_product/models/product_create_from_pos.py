@@ -52,12 +52,12 @@ class ProductTemplate(models.Model):
         if "pos_categ_ids" in self._fields and pos_category_id:
             vals["pos_categ_ids"] = [(6, 0, [int(pos_category_id)])]
 
-        if "type" in self._fields:
-            vals["type"] = "product"
+        if "is_storable" in self._fields:
+            vals["is_storable"] = True
         elif "detailed_type" in self._fields:
             vals["detailed_type"] = "product"
-        elif "is_storable" in self._fields:
-            vals["is_storable"] = True
+        elif "type" in self._fields:
+            vals["type"] = "consu"
 
         template = self.create(vals)
 
