@@ -86,18 +86,29 @@ patch(ControlButtons.prototype, {
         }
 
         const lines = order.getOrderlines().map((line) => {
-        const qty = line.qty || 1;
-        const priceUnit = line.price_unit || 0;
-        const subtotalIncl = Number(getLineSubtotalIncl(line).toFixed(2));
+            console.log("LINE DEBUG", {
+                line,
+                price_unit: line.price_unit,
+                qty: line.qty,
+                price_subtotal: line.price_subtotal,
+                price_subtotal_incl: line.price_subtotal_incl,
+                get_all_prices: typeof line.get_all_prices,
+                getAllPrices: typeof line.getAllPrices,
+                all_prices: typeof line.get_all_prices === "function" ? line.get_all_prices() : null,
+            });
 
-        return {
-            product_id: line.product_id?.id,
-            description: line.full_product_name || line.product_id?.display_name || "",
-            qty: qty,
-            price_unit: priceUnit,
-            price_subtotal_incl: subtotalIncl,
-        };
-    });
+            const qty = line.qty || 1;
+            const priceUnit = line.price_unit || 0;
+            const subtotalIncl = Number(getLineSubtotalIncl(line).toFixed(2));
+
+            return {
+                product_id: line.product_id?.id,
+                description: line.full_product_name || line.product_id?.display_name || "",
+                qty: qty,
+                price_unit: priceUnit,
+                price_subtotal_incl: subtotalIncl,
+            };
+        });
 
     const totalAmount = Number(
         lines.reduce((sum, line) => sum + line.price_subtotal_incl, 0).toFixed(2)
