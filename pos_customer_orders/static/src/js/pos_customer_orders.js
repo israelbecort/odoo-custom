@@ -146,6 +146,14 @@ patch(ControlButtons.prototype, {
             }]
         );
 
+        order.is_customer_order = true;
+        order.customer_order_data = {
+            name: result.name,
+            total: Number(result.total_amount),
+            paid: Number(result.paid_amount),
+            pending: Number(result.pending_amount),
+        };
+
         await this.pos.loadNewProducts([
             ["id", "=", result.product_id],
         ]);
