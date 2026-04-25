@@ -6,6 +6,7 @@ import { ControlButtons } from "@point_of_sale/app/screens/product_screen/contro
 import { Dialog } from "@web/core/dialog/dialog";
 import { makeAwaitable } from "@point_of_sale/app/utils/make_awaitable_dialog";
 import { PartnerList } from "@point_of_sale/app/screens/partner_list/partner_list";
+import { PosOrder } from "@point_of_sale/app/models/pos_order";
 
 class CustomerOrderPopup extends Component {
     static template = "pos_customer_orders.CustomerOrderPopup";
@@ -62,6 +63,42 @@ function getLineSubtotalIncl(line) {
 
     return priceUnit * qty * (1 + taxAmount / 100);
 }
+
+patch(PosOrder.prototype, {
+    setup(vals) {
+        super.setup(vals);
+
+        if (this.is_customer_order) {
+            this.uiState.is_customer_order = true;
+            this.uiState.customer_order_data = {
+                name: this.customer_order_ref,
+                total: Number(this.customer_order_total || 0),
+                paid: Number(this.customer_order_paid || 0),
+                pending: Number(this.customer_order_pending || 0),
+                lines: this.customer_order_lines_json
+                    ? JSON.parse(this.customer_order_lines_json)
+                    : [],
+            };
+        }
+    },
+
+    serializeForORM(opts = {}) {
+        const data = super.serializeForORM(opts);
+
+        if (this.uiState?.is_customer_order && this.uiState?.customer_order_data) {
+            data.is_customer_order = true;
+            data.customer_order_ref = this.uiState.customer_order_data.name;
+            data.customer_order_total = this.uiState.customer_order_data.total;
+            data.customer_order_paid = this.uiState.customer_order_data.paid;
+            data.customer_order_pending = this.uiState.customer_order_data.pending;
+            data.customer_order_lines_json = JSON.stringify(
+                this.uiState.customer_order_data.lines || []
+            );
+        }
+
+        return data;
+    },
+});
 
 patch(ControlButtons.prototype, {
     async clickCustomerOrder() {
