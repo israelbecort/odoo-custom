@@ -1,0 +1,8 @@
+<odoo>
+    <record id="seq_pos_customer_order" model="ir.sequence">
+        <field name="name">Encargos TPV</field>
+        <field name="code">pos.customer.order</field>
+        <field name="prefix">ENC/</field>
+        <field name="padding">4</field>
+    </record>
+</odoo>
