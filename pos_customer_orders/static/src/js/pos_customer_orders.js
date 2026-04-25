@@ -72,13 +72,22 @@ patch(ControlButtons.prototype, {
             return;
         }
 
-        const lines = order.getOrderlines().map((line) => ({
+        const lines = order.getOrderlines().map((line) => {
+        const qty = line.qty || 1;
+        const priceUnit = line.price_unit || 0;
+        const subtotalIncl =
+            line.price_subtotal_incl ||
+            line.price_subtotal ||
+            (priceUnit * qty);
+
+        return {
             product_id: line.product_id?.id,
             description: line.full_product_name || line.product_id?.display_name || "",
-            qty: line.qty,
-            price_unit: line.price_unit,
-            price_subtotal_incl: line.getPriceWithTax(),
-        }));
+            qty: qty,
+            price_unit: priceUnit,
+            price_subtotal_incl: subtotalIncl,
+        };
+    });
 
         const result = await this.env.services.orm.call(
             "pos.customer.order",
