@@ -98,14 +98,9 @@ patch(ControlButtons.prototype, {
             };
         });
 
-    const totalAmount = Number(
-        lines.reduce((sum, line) => sum + line.price_subtotal_incl, 0).toFixed(2)
-    );
-
-    console.log("CUSTOM ORDER RAW LINES", order.getOrderlines());
-    console.log("CUSTOM ORDER LINES", lines);
-    console.log("CUSTOM ORDER TOTAL", totalAmount);
-    console.log("CUSTOM ORDER PAID", payload.paid_amount);
+        const totalAmount = Number(
+            lines.reduce((sum, line) => sum + line.price_subtotal_incl, 0).toFixed(2)
+        );
 
         if (payload.paid_amount > totalAmount) {
             this.notification.add("El anticipo no puede superar el total del encargo.", {
@@ -159,7 +154,8 @@ patch(ControlButtons.prototype, {
 
         if (advanceLine) {
             advanceLine.full_product_name = `Anticipo ${result.name}`;
-            advanceLine.customer_note = `Encargo ${result.name} - Total: ${result.total_amount}€ - Pendiente: ${result.pending_amount}€`;
+            advanceLine.customer_note =
+                `Encargo ${result.name} - Total: ${Number(result.total_amount).toFixed(2)}€ - Pendiente: ${Number(result.pending_amount).toFixed(2)}€`;
 
             if (advanceLine.orderDisplayProductName) {
                 advanceLine.orderDisplayProductName.name = `Anticipo ${result.name}`;

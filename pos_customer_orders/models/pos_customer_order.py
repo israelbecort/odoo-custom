@@ -40,7 +40,7 @@ class PosCustomerOrder(models.Model):
     @api.depends("total_amount", "paid_amount")
     def _compute_pending(self):
         for rec in self:
-            rec.pending_amount = rec.total_amount - rec.paid_amount
+            rec.pending_amount = round(rec.total_amount - rec.paid_amount, 2)
 
     @api.model_create_multi
     def create(self, vals_list):
@@ -56,17 +56,16 @@ class PosCustomerOrder(models.Model):
     def create_from_pos(self, data):
         partner_id = data.get("partner_id")
         lines = data.get("lines") or []
-        paid_amount = float(data.get("paid_amount") or 0)
+        paid_amount = round(float(data.get("paid_amount") or 0), 2)
         note = data.get("note")
         expected_date = data.get("expected_date") or False
+        total_amount = round(float(data.get("total_amount") or 0), 2)
 
         if not partner_id:
             raise UserError("Debe seleccionar un cliente.")
 
         if not lines:
             raise UserError("No hay líneas en el ticket.")
-
-        total_amount = float(data.get("total_amount") or 0)
 
         if total_amount <= 0:
             raise UserError("El total del encargo debe ser mayor que 0.")
@@ -89,7 +88,7 @@ class PosCustomerOrder(models.Model):
                     "description": line.get("description"),
                     "qty": float(line.get("qty") or 0),
                     "price_unit": float(line.get("price_unit") or 0),
-                    "price_subtotal_incl": float(line.get("price_subtotal_incl") or 0),
+                    "price_subtotal_incl": round(float(line.get("price_subtotal_incl") or 0), 2),
                 })
                 for line in lines
             ],
@@ -105,9 +104,9 @@ class PosCustomerOrder(models.Model):
         return {
             "id": order.id,
             "name": order.name,
-            "total_amount": order.total_amount,
-            "paid_amount": order.paid_amount,
-            "pending_amount": order.pending_amount,
+            "total_amount": round(order.total_amount, 2),
+            "paid_amount": round(order.paid_amount, 2),
+            "pending_amount": round(order.pending_amount, 2),
             "product_id": product.id,
         }
 
