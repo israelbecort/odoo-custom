@@ -89,7 +89,12 @@ patch(ControlButtons.prototype, {
         };
     });
 
-        const totalAmount = order.getTotalWithTax();
+        const totalAmount =
+            order.amount_total ||
+            order.get_total_with_tax?.() ||
+            order.getTotalWithTax?.() ||
+            0;
+        console.log("CUSTOM ORDER TOTAL", totalAmount, order);
 
         const result = await this.env.services.orm.call(
             "pos.customer.order",
