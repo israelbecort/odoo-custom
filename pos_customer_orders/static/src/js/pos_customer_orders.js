@@ -70,19 +70,28 @@ patch(PosOrder.prototype, {
 
         this.uiState = this.uiState || {};
 
-        if (this.is_customer_order) {
+        const linesJson = this.customer_order_lines_json || vals?.customer_order_lines_json;
+
+        if (this.is_customer_order || vals?.is_customer_order) {
+            let customerOrderLines = [];
+
+            try {
+                customerOrderLines = linesJson ? JSON.parse(linesJson) : [];
+            } catch {
+                customerOrderLines = [];
+            }
+
             this.uiState.is_customer_order = true;
             this.uiState.customer_order_data = {
-                name: this.customer_order_ref,
-                total: Number(this.customer_order_total || 0),
-                paid: Number(this.customer_order_paid || 0),
-                pending: Number(this.customer_order_pending || 0),
-                lines: this.customer_order_lines_json
-                    ? JSON.parse(this.customer_order_lines_json)
-                    : [],
+                name: this.customer_order_ref || vals?.customer_order_ref,
+                total: Number(this.customer_order_total || vals?.customer_order_total || 0),
+                paid: Number(this.customer_order_paid || vals?.customer_order_paid || 0),
+                pending: Number(this.customer_order_pending || vals?.customer_order_pending || 0),
+                lines: customerOrderLines,
             };
         }
     },
+
     serializeForORM(opts = {}) {
         const data = super.serializeForORM(opts);
 
