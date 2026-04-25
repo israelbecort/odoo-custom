@@ -37,6 +37,18 @@ class PosCustomerOrder(models.Model):
         default="draft",
     )
 
+    def action_mark_done(self):
+        for rec in self:
+            rec.state = "done"
+
+    def action_cancel(self):
+        for rec in self:
+            rec.state = "cancel"
+
+    def action_back_to_draft(self):
+        for rec in self:
+            rec.state = "draft"
+
     @api.depends("total_amount", "paid_amount")
     def _compute_pending(self):
         for rec in self:
@@ -112,19 +124,6 @@ class PosCustomerOrder(models.Model):
 
 
 class PosCustomerOrderLine(models.Model):
-
-    def action_mark_done(self):
-        for rec in self:
-            rec.state = "done"
-
-    def action_cancel(self):
-        for rec in self:
-            rec.state = "cancel"
-
-    def action_back_to_draft(self):
-        for rec in self:
-            rec.state = "draft"
-
     _name = "pos.customer.order.line"
     _description = "Líneas de encargo TPV"
 
