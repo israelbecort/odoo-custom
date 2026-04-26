@@ -483,7 +483,7 @@ class CustomerOrdersScreen extends Component {
     }
 
     back() {
-        this.pos.showScreen("ProductScreen");
+        this.pos.navigate("ProductScreen");
     }
 }
 
