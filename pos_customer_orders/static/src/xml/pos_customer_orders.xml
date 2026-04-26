@@ -98,7 +98,7 @@
         <div class="pos customer-orders-screen">
     
             <div class="top-content d-flex align-items-center gap-2 p-3 border-bottom">
-                <button class="btn btn-secondary" t-on-click="back">
+                <button class="btn btn-secondary" t-on-click="() => this.back()">
                     <i class="fa fa-arrow-left me-1"/>
                     Registrar
                 </button>
@@ -116,7 +116,7 @@
                     <option value="all">Todos</option>
                 </select>
     
-                <button class="btn btn-primary" t-on-click="loadOrders">
+                <button class="btn btn-primary" t-on-click="() => this.loadOrders()">
                     Actualizar
                 </button>
             </div>
@@ -162,19 +162,19 @@
                                 <div class="d-flex gap-2">
                                     <button t-if="order.state === 'draft'"
                                             class="btn btn-info"
-                                            t-on-click="() => markReceived(order)">
+                                            t-on-click="() => this.markReceived(order)">
                                         Mercancía recibida
                                     </button>
     
                                     <button t-if="order.state === 'received'"
                                             class="btn btn-success"
-                                            t-on-click="() => markDone(order)">
+                                            t-on-click="() => this.markDone(order)">
                                         Entregado
                                     </button>
     
                                     <button t-if="order.state !== 'done' and order.state !== 'cancel'"
                                             class="btn btn-danger"
-                                            t-on-click="() => cancelOrder(order)">
+                                            t-on-click="() => this.cancelOrder(order)">
                                         Cancelar
                                     </button>
                                 </div>
