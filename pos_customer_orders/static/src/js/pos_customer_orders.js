@@ -476,6 +476,168 @@ class CustomerOrdersScreen extends Component {
         await this.loadOrders();
     }
 
+    async chargePending(order) {
+        const currentOrder = this.pos.getOrder();
+    
+        if (currentOrder && !currentOrder.isEmpty()) {
+            this.env.services.notification.add(
+                "Abra un ticket nuevo antes de cobrar un encargo.",
+                { type: "warning" }
+            );
+            return;
+        }
+    
+        const customerOrders = await this.env.services.orm.read(
+            "pos.customer.order",
+            [order.id],
+            [
+                "name",
+                "partner_id",
+                "total_amount",
+                "paid_amount",
+                "pending_amount",
+                "line_ids",
+            ]
+        );
+    
+        const customerOrder = customerOrders?.[0];
+    
+        if (!customerOrder) {
+            return;
+        }
+    
+        const lines = await this.env.services.orm.searchRead(
+            "pos.customer.order.line",
+            [["order_id", "=", order.id]],
+            [
+                "product_id",
+                "description",
+                "qty",
+                "price_unit",
+                "price_subtotal_incl",
+            ]
+        );
+    
+        const advanceProducts = await this.env.services.orm.searchRead(
+            "product.product",
+            [["default_code", "=", "ANTICIPO"]],
+            ["id"],
+            { limit: 1 }
+        );
+    
+        const advanceProductId = advanceProducts?.[0]?.id;
+    
+        if (!advanceProductId) {
+            this.env.services.notification.add(
+                "No existe el producto con referencia ANTICIPO.",
+                { type: "danger" }
+            );
+            return;
+        }
+    
+        const productIds = [
+            ...lines.map((line) => line.product_id?.[0]).filter(Boolean),
+            advanceProductId,
+        ];
+    
+        await this.pos.loadNewProducts([
+            ["id", "in", productIds],
+        ]);
+    
+        if (customerOrder.partner_id?.[0]) {
+            const partners = await this.env.services.orm.searchRead(
+                "res.partner",
+                [["id", "=", customerOrder.partner_id[0]]],
+                ["id", "name"],
+                { limit: 1 }
+            );
+    
+            if (partners?.[0]) {
+                const partner = this.pos.models["res.partner"].get(partners[0].id);
+                if (partner) {
+                    currentOrder.setPartner(partner);
+                }
+            }
+        }
+    
+        for (const line of lines) {
+            const productId = line.product_id?.[0];
+            const product = this.pos.models["product.product"].get(productId);
+    
+            if (!product) {
+                continue;
+            }
+    
+            await this.pos.addLineToCurrentOrder(
+                {
+                    product_id: product,
+                    product_tmpl_id: product.product_tmpl_id,
+                },
+                {
+                    price: line.price_unit,
+                },
+                false
+            );
+    
+            const orderLine = currentOrder.getSelectedOrderline();
+    
+            if (orderLine) {
+                if (typeof orderLine.setQuantity === "function") {
+                    orderLine.setQuantity(line.qty);
+                } else if (typeof orderLine.set_quantity === "function") {
+                    orderLine.set_quantity(line.qty);
+                } else {
+                    orderLine.qty = line.qty;
+                }
+    
+                orderLine.full_product_name = line.description;
+    
+                if (orderLine.orderDisplayProductName) {
+                    orderLine.orderDisplayProductName.name = line.description;
+                }
+            }
+        }
+    
+        const advanceProduct = this.pos.models["product.product"].get(advanceProductId);
+    
+        await this.pos.addLineToCurrentOrder(
+            {
+                product_id: advanceProduct,
+                product_tmpl_id: advanceProduct.product_tmpl_id,
+            },
+            {
+                price: -Math.abs(customerOrder.paid_amount),
+            },
+            false
+        );
+    
+        const advanceLine = currentOrder.getSelectedOrderline();
+    
+        if (advanceLine) {
+            advanceLine.full_product_name = `Anticipo ${customerOrder.name}`;
+    
+            if (advanceLine.orderDisplayProductName) {
+                advanceLine.orderDisplayProductName.name = `Anticipo ${customerOrder.name}`;
+            }
+        }
+    
+        currentOrder.uiState.is_customer_order = true;
+        currentOrder.uiState.customer_order_data = {
+            name: customerOrder.name,
+            total: Number(customerOrder.total_amount || 0),
+            paid: Number(customerOrder.paid_amount || 0),
+            pending: Number(customerOrder.pending_amount || 0),
+            lines,
+        };
+    
+        this.pos.navigate("ProductScreen");
+    
+        this.env.services.notification.add(
+            `Ticket preparado para cobrar ${customerOrder.name}.`,
+            { type: "success" }
+        );
+    }
+
     async markDone(order) {
         await this.env.services.orm.call("pos.customer.order", "action_mark_done", [[order.id]]);
         await this.loadOrders();
