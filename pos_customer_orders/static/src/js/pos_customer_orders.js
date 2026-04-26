@@ -11,6 +11,23 @@ import { TicketScreen } from "@point_of_sale/app/screens/ticket_screen/ticket_sc
 import { registry } from "@web/core/registry";
 import { usePos } from "@point_of_sale/app/hooks/pos_hook";
 
+function getPriceUnitFromTotalIncl(line, taxById) {
+    const qty = Number(line.qty || 1);
+    const totalIncl = Number(line.price_subtotal_incl || 0);
+    const taxIds = line.tax_ids || [];
+
+    const taxRate = taxIds.reduce((sum, taxId) => {
+        const tax = taxById[taxId];
+        return sum + Number(tax?.amount || 0);
+    }, 0);
+
+    if (!qty) {
+        return 0;
+    }
+
+    return Number((totalIncl / qty / (1 + taxRate / 100)).toFixed(6));
+}
+
 function getLineSubtotalIncl(line) {
     const qty = line.qty || 1;
     const priceUnit = line.price_unit || 0;
@@ -478,6 +495,18 @@ class CustomerOrdersScreen extends Component {
             ]
         );
 
+        const allTaxIds = [...new Set(lines.flatMap((line) => line.tax_ids || []))];
+
+        const taxes = allTaxIds.length
+            ? await this.env.services.orm.searchRead(
+                "account.tax",
+                [["id", "in", allTaxIds]],
+                ["id", "amount"]
+            )
+            : [];
+
+        const taxById = Object.fromEntries(taxes.map((tax) => [tax.id, tax]));
+
         const advanceProducts = await this.env.services.orm.searchRead(
             "product.product",
             [["default_code", "=", "ANTICIPO"]],
@@ -521,28 +550,28 @@ class CustomerOrdersScreen extends Component {
         for (const line of lines) {
             const productId = line.product_id?.[0];
             const product = this.pos.models["product.product"].get(productId);
-
+        
             if (!product) {
                 continue;
             }
-
+        
+            const price = getPriceUnitFromTotalIncl(line, taxById);
+        
             await this.pos.addLineToCurrentOrder(
                 {
                     product_id: product,
                     product_tmpl_id: product.product_tmpl_id,
                 },
                 {
-                    price: Number(line.price_unit || 0),
+                    price,
                     from_customer_order: true,
                 },
                 false
             );
-
+        
             const orderLine = currentOrder.getSelectedOrderline();
-
+        
             if (orderLine) {
-                const price = Number(line.price_unit || 0);
-
                 if (typeof orderLine.set_unit_price === "function") {
                     orderLine.set_unit_price(price);
                 } else if (typeof orderLine.setUnitPrice === "function") {
@@ -550,9 +579,9 @@ class CustomerOrdersScreen extends Component {
                 } else {
                     orderLine.price_unit = price;
                 }
-
+        
                 orderLine.price_type = "manual";
-
+        
                 if (typeof orderLine.setQuantity === "function") {
                     orderLine.setQuantity(line.qty);
                 } else if (typeof orderLine.set_quantity === "function") {
@@ -560,9 +589,9 @@ class CustomerOrdersScreen extends Component {
                 } else {
                     orderLine.qty = line.qty;
                 }
-
+        
                 orderLine.full_product_name = line.description;
-
+        
                 if (orderLine.orderDisplayProductName) {
                     orderLine.orderDisplayProductName.name = line.description;
                 }
