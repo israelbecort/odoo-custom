@@ -228,6 +228,14 @@ patch(ControlButtons.prototype, {
             payload.selected_line_uuids.includes(line.uuid)
         );
 
+        const originalTicketLines = currentLines
+            .filter((line) => !payload.selected_line_uuids.includes(line.uuid))
+            .map((line) => ({
+                description: line.description,
+                qty: line.qty,
+                price_subtotal_incl: line.price_subtotal_incl,
+            }));
+
         if (!selectedLines.length) {
             this.notification.add("Seleccione al menos una línea para el encargo.", {
                 type: "warning",
@@ -260,6 +268,7 @@ patch(ControlButtons.prototype, {
             "create_from_pos",
             [
                 {
+                    original_ticket_lines_json: JSON.stringify(originalTicketLines),
                     partner_id: payload.partner_id,
                     lines,
                     total_amount: totalAmount,
@@ -477,6 +486,7 @@ class CustomerOrdersScreen extends Component {
                 "paid_amount",
                 "pending_amount",
                 "line_ids",
+                "original_ticket_lines_json",
             ]
         );
 
@@ -643,6 +653,9 @@ class CustomerOrdersScreen extends Component {
         currentOrder.uiState.is_customer_order = true;
         currentOrder.uiState.customer_order_data = {
             name: customerOrder.name,
+            original_ticket_lines: customerOrder.original_ticket_lines_json
+            ? JSON.parse(customerOrder.original_ticket_lines_json)
+            : [],
             total: Number(customerOrder.total_amount || 0),
             paid: Number(customerOrder.paid_amount || 0),
             pending: Number(customerOrder.pending_amount || 0),

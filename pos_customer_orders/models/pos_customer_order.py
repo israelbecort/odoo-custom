@@ -28,6 +28,8 @@ class PosCustomerOrder(models.Model):
         store=True,
     )
 
+    original_ticket_lines_json = fields.Text(string="Líneas ticket original", default="[]")
+
     state = fields.Selection(
         [
             ("draft", "Pendiente"),
@@ -99,6 +101,7 @@ class PosCustomerOrder(models.Model):
             "expected_date": expected_date,
             "total_amount": total_amount,
             "paid_amount": paid_amount,
+            "original_ticket_lines_json": data.get("original_ticket_lines_json", "[]"),
             "line_ids": [
                 (0, 0, {
                     "product_id": int(line.get("product_id")) if line.get("product_id") else False,
