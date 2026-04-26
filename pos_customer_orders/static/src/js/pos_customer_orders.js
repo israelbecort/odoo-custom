@@ -16,14 +16,18 @@ function getPriceUnitFromTotalIncl(line, taxById) {
     const totalIncl = Number(line.price_subtotal_incl || 0);
     const taxIds = line.tax_ids || [];
 
-    const taxRate = taxIds.reduce((sum, taxId) => {
-        const tax = taxById[taxId];
-        return sum + Number(tax?.amount || 0);
-    }, 0);
-
     if (!qty) {
         return 0;
     }
+
+    const taxes = taxIds.map((taxId) => taxById[taxId]).filter(Boolean);
+    const hasPriceIncludedTax = taxes.some((tax) => tax.price_include);
+
+    if (hasPriceIncludedTax) {
+        return Number((totalIncl / qty).toFixed(6));
+    }
+
+    const taxRate = taxes.reduce((sum, tax) => sum + Number(tax.amount || 0), 0);
 
     return Number((totalIncl / qty / (1 + taxRate / 100)).toFixed(6));
 }
@@ -501,7 +505,7 @@ class CustomerOrdersScreen extends Component {
             ? await this.env.services.orm.searchRead(
                 "account.tax",
                 [["id", "in", allTaxIds]],
-                ["id", "amount"]
+                ["id", "amount", "price_include"]
             )
             : [];
 
