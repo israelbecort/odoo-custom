@@ -577,7 +577,7 @@ class CustomerOrdersScreen extends Component {
         
             if (orderLine) {
                 const price = getPriceUnitFromTotalIncl(line, taxById);
-            
+
                 if (typeof orderLine.setQuantity === "function") {
                     orderLine.setQuantity(line.qty);
                 } else if (typeof orderLine.set_quantity === "function") {
@@ -585,18 +585,13 @@ class CustomerOrdersScreen extends Component {
                 } else {
                     orderLine.qty = line.qty;
                 }
-            
-                if (typeof orderLine.setUnitPrice === "function") {
-                    orderLine.setUnitPrice(price);
-                } else if (typeof orderLine.set_unit_price === "function") {
-                    orderLine.set_unit_price(price);
-                } else {
-                    orderLine.price_unit = price;
-                }
-            
+
+                // Forzamos precio exacto sin redondeo del setter
+                orderLine.price_unit = price;
                 orderLine.price_type = "manual";
+
                 orderLine.full_product_name = line.description;
-            
+
                 if (orderLine.orderDisplayProductName) {
                     orderLine.orderDisplayProductName.name = line.description;
                 }
