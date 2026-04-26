@@ -489,5 +489,6 @@ class CustomerOrdersScreen extends Component {
 
 registry.category("pos_pages").add("CustomerOrdersScreen", {
     name: "CustomerOrdersScreen",
+    route: "/customer-orders",
     component: CustomerOrdersScreen,
 });
