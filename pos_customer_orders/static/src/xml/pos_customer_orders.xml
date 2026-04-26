@@ -186,11 +186,15 @@
         </div>
     </t>
 
-    <t t-inherit="point_of_sale.ProductScreen" t-inherit-mode="extension">
-        <xpath expr="//button[contains(@class, 'ticket-button')]" position="after">
-            <button class="btn btn-lg btn-secondary"
+    <t t-inherit="point_of_sale.Navbar" t-inherit-mode="extension">
+        <xpath expr="//button[contains(@class, 'orders-button')]" position="after">
+            <button class="customer-orders-button btn btn-lg btn-light lh-lg"
+                    t-att-class="{'active': this.pos.router.state.current === 'CustomerOrdersScreen'}"
                     t-on-click="() => this.pos.showScreen('CustomerOrdersScreen')">
-                Encargos
+                <t t-if="!ui.isSmall">
+                    <span>Encargos</span>
+                </t>
+                <i t-else="" class="fa fa-fw fa-clipboard" t-att-class="{'fa-lg' : !ui.isSmall}"/>
             </button>
         </xpath>
     </t>
