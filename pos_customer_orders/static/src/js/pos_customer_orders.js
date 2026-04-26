@@ -8,7 +8,6 @@ import { makeAwaitable } from "@point_of_sale/app/utils/make_awaitable_dialog";
 import { PartnerList } from "@point_of_sale/app/screens/partner_list/partner_list";
 import { PosOrder } from "@point_of_sale/app/models/pos_order";
 import { TicketScreen } from "@point_of_sale/app/screens/ticket_screen/ticket_screen";
-import { PosOrder } from "@point_of_sale/app/models/pos_order";
 
 function getLineSubtotalIncl(line) {
     const qty = line.qty || 1;
