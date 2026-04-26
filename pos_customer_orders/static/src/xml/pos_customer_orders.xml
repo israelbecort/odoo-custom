@@ -25,7 +25,7 @@
                             <div class="d-flex align-items-center gap-2 py-2 border-bottom">
                                 <input type="checkbox"
                                        t-att-checked="state.selectedLineUuids[line.uuid]"
-                                       t-on-change="() => toggleLine(line.uuid)"/>
+                                       t-on-change="() => this.toggleLine(line.uuid)"/>
 
                                 <div class="flex-grow-1">
                                     <div class="fw-bold">
