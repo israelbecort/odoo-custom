@@ -204,6 +204,15 @@
                 <i t-else="" class="fa fa-fw fa-clipboard" t-att-class="{'fa-lg' : !ui.isSmall}"/>
             </button>
         </xpath>
+
+        <xpath expr="//button[contains(@class, 'register-label')]" position="attributes">
+            <attribute name="t-att-class">
+                {'active': mainButton === 'register' and this.pos.router.state.current !== 'CustomerOrdersScreen'}
+            </attribute>
+            <attribute name="t-on-click">
+                () => this.pos.navigate('ProductScreen')
+            </attribute>
+        </xpath>
     
     </t>
 
