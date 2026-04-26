@@ -537,21 +537,25 @@ class CustomerOrdersScreen extends Component {
                 false
             );
     
-            const orderLine = currentOrder.getSelectedOrderline();
-    
-            if (orderLine) {
-                if (typeof orderLine.setQuantity === "function") {
-                    orderLine.setQuantity(line.qty);
-                } else if (typeof orderLine.set_quantity === "function") {
-                    orderLine.set_quantity(line.qty);
+            const advanceLine = currentOrder.getSelectedOrderline();
+
+            if (advanceLine) {
+                const advancePrice = -Math.abs(Number(customerOrder.paid_amount || 0));
+
+                if (typeof advanceLine.set_unit_price === "function") {
+                    advanceLine.set_unit_price(advancePrice);
+                } else if (typeof advanceLine.setUnitPrice === "function") {
+                    advanceLine.setUnitPrice(advancePrice);
                 } else {
-                    orderLine.qty = line.qty;
+                    advanceLine.price_unit = advancePrice;
                 }
-    
-                orderLine.full_product_name = line.description;
-    
-                if (orderLine.orderDisplayProductName) {
-                    orderLine.orderDisplayProductName.name = line.description;
+
+                advanceLine.price_type = "manual";
+
+                advanceLine.full_product_name = `Anticipo ${customerOrder.name}`;
+
+                if (advanceLine.orderDisplayProductName) {
+                    advanceLine.orderDisplayProductName.name = `Anticipo ${customerOrder.name}`;
                 }
             }
         }
