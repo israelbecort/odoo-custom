@@ -160,9 +160,6 @@ patch(ControlButtons.prototype, {
             if (!partner) {
                 return;
             }
-
-            // Importante: NO hacemos order.setPartner(partner) aquí.
-            // Odoo recalcula precios al asignar cliente y puede poner CUSTOM a 0,00.
         }
 
         const currentLines = order.getOrderlines().map((line) => {
@@ -191,7 +188,6 @@ patch(ControlButtons.prototype, {
 
                 if (selectedPartner) {
                     partner = selectedPartner;
-                    // Importante: NO hacemos order.setPartner(partner) aquí.
                 }
 
                 return partner;
@@ -247,8 +243,6 @@ patch(ControlButtons.prototype, {
             ]
         );
 
-        // Ahora sí asignamos el cliente, cuando ya hemos leído/importado las líneas.
-        // Si Odoo recalcula precios, ya no afecta al cálculo del encargo.
         if (partner) {
             order.setPartner(partner);
         }
@@ -299,6 +293,7 @@ patch(ControlButtons.prototype, {
                 advanceLine.price_unit = payload.paid_amount;
             }
 
+            advanceLine.price_type = "manual";
             advanceLine.full_product_name = `Anticipo ${result.name}`;
 
             if (advanceLine.orderDisplayProductName) {
@@ -362,13 +357,13 @@ class CustomerOrdersScreen extends Component {
 
     setup() {
         this.pos = usePos();
-    
+
         this.state = useState({
             orders: [],
             filter: "active",
             search: "",
         });
-    
+
         this.loadOrders();
     }
 
@@ -434,8 +429,9 @@ class CustomerOrdersScreen extends Component {
 
     async chargePending(order) {
         console.log("COBRAR PENDIENTE", order);
+
         const currentOrder = this.pos.getOrder();
-    
+
         if (currentOrder && !currentOrder.isEmpty()) {
             this.env.services.notification.add(
                 "Abra un ticket nuevo antes de cobrar un encargo.",
@@ -443,7 +439,7 @@ class CustomerOrdersScreen extends Component {
             );
             return;
         }
-    
+
         const customerOrders = await this.env.services.orm.read(
             "pos.customer.order",
             [order.id],
@@ -456,13 +452,13 @@ class CustomerOrdersScreen extends Component {
                 "line_ids",
             ]
         );
-    
+
         const customerOrder = customerOrders?.[0];
-    
+
         if (!customerOrder) {
             return;
         }
-    
+
         const lines = await this.env.services.orm.searchRead(
             "pos.customer.order.line",
             [["order_id", "=", order.id]],
@@ -474,16 +470,16 @@ class CustomerOrdersScreen extends Component {
                 "price_subtotal_incl",
             ]
         );
-    
+
         const advanceProducts = await this.env.services.orm.searchRead(
             "product.product",
             [["default_code", "=", "ANTICIPO"]],
             ["id"],
             { limit: 1 }
         );
-    
+
         const advanceProductId = advanceProducts?.[0]?.id;
-    
+
         if (!advanceProductId) {
             this.env.services.notification.add(
                 "No existe el producto con referencia ANTICIPO.",
@@ -491,16 +487,14 @@ class CustomerOrdersScreen extends Component {
             );
             return;
         }
-    
+
         const productIds = [
             ...lines.map((line) => line.product_id?.[0]).filter(Boolean),
             advanceProductId,
         ];
-    
-        await this.pos.loadNewProducts([
-            ["id", "in", productIds],
-        ]);
-    
+
+        await this.pos.loadNewProducts([["id", "in", productIds]]);
+
         if (customerOrder.partner_id?.[0]) {
             const partners = await this.env.services.orm.searchRead(
                 "res.partner",
@@ -508,7 +502,7 @@ class CustomerOrdersScreen extends Component {
                 ["id", "name"],
                 { limit: 1 }
             );
-    
+
             if (partners?.[0]) {
                 const partner = this.pos.models["res.partner"].get(partners[0].id);
                 if (partner) {
@@ -516,73 +510,92 @@ class CustomerOrdersScreen extends Component {
                 }
             }
         }
-    
+
         for (const line of lines) {
             const productId = line.product_id?.[0];
             const product = this.pos.models["product.product"].get(productId);
-    
+
             if (!product) {
                 continue;
             }
-    
+
             await this.pos.addLineToCurrentOrder(
                 {
                     product_id: product,
                     product_tmpl_id: product.product_tmpl_id,
                 },
                 {
-                    price: line.price_unit,
+                    price: Number(line.price_unit || 0),
                     from_customer_order: true,
                 },
                 false
             );
-    
-            const advanceLine = currentOrder.getSelectedOrderline();
 
-            if (advanceLine) {
-                const advancePrice = -Math.abs(Number(customerOrder.paid_amount || 0));
+            const orderLine = currentOrder.getSelectedOrderline();
 
-                if (typeof advanceLine.set_unit_price === "function") {
-                    advanceLine.set_unit_price(advancePrice);
-                } else if (typeof advanceLine.setUnitPrice === "function") {
-                    advanceLine.setUnitPrice(advancePrice);
+            if (orderLine) {
+                const price = Number(line.price_unit || 0);
+
+                if (typeof orderLine.set_unit_price === "function") {
+                    orderLine.set_unit_price(price);
+                } else if (typeof orderLine.setUnitPrice === "function") {
+                    orderLine.setUnitPrice(price);
                 } else {
-                    advanceLine.price_unit = advancePrice;
+                    orderLine.price_unit = price;
                 }
 
-                advanceLine.price_type = "manual";
+                orderLine.price_type = "manual";
 
-                advanceLine.full_product_name = `Anticipo ${customerOrder.name}`;
+                if (typeof orderLine.setQuantity === "function") {
+                    orderLine.setQuantity(line.qty);
+                } else if (typeof orderLine.set_quantity === "function") {
+                    orderLine.set_quantity(line.qty);
+                } else {
+                    orderLine.qty = line.qty;
+                }
 
-                if (advanceLine.orderDisplayProductName) {
-                    advanceLine.orderDisplayProductName.name = `Anticipo ${customerOrder.name}`;
+                orderLine.full_product_name = line.description;
+
+                if (orderLine.orderDisplayProductName) {
+                    orderLine.orderDisplayProductName.name = line.description;
                 }
             }
         }
-    
+
         const advanceProduct = this.pos.models["product.product"].get(advanceProductId);
-    
+
         await this.pos.addLineToCurrentOrder(
             {
                 product_id: advanceProduct,
                 product_tmpl_id: advanceProduct.product_tmpl_id,
             },
             {
-                price: -Math.abs(customerOrder.paid_amount),
+                price: -Math.abs(Number(customerOrder.paid_amount || 0)),
             },
             false
         );
-    
+
         const advanceLine = currentOrder.getSelectedOrderline();
-    
+
         if (advanceLine) {
+            const advancePrice = -Math.abs(Number(customerOrder.paid_amount || 0));
+
+            if (typeof advanceLine.set_unit_price === "function") {
+                advanceLine.set_unit_price(advancePrice);
+            } else if (typeof advanceLine.setUnitPrice === "function") {
+                advanceLine.setUnitPrice(advancePrice);
+            } else {
+                advanceLine.price_unit = advancePrice;
+            }
+
+            advanceLine.price_type = "manual";
             advanceLine.full_product_name = `Anticipo ${customerOrder.name}`;
-    
+
             if (advanceLine.orderDisplayProductName) {
                 advanceLine.orderDisplayProductName.name = `Anticipo ${customerOrder.name}`;
             }
         }
-    
+
         currentOrder.uiState.is_customer_order = true;
         currentOrder.uiState.customer_order_data = {
             name: customerOrder.name,
@@ -591,9 +604,9 @@ class CustomerOrdersScreen extends Component {
             pending: Number(customerOrder.pending_amount || 0),
             lines,
         };
-    
+
         this.pos.navigate("ProductScreen");
-    
+
         this.env.services.notification.add(
             `Ticket preparado para cobrar ${customerOrder.name}.`,
             { type: "success" }
