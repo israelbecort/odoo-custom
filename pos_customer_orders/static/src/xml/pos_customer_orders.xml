@@ -165,19 +165,13 @@
                                             t-on-click="() => this.markReceived(order)">
                                         Mercancía recibida
                                     </button>
-    
+                                
                                     <button t-if="order.state === 'received'"
                                             class="btn btn-success"
                                             t-on-click="() => this.chargePending(order)">
                                         Cobrar pendiente
                                     </button>
-
-                                    <button t-if="order.state === 'received'"
-                                            class="btn btn-secondary"
-                                            t-on-click="() => this.markDone(order)">
-                                        Marcar entregado
-                                    </button>
-    
+                                
                                     <button t-if="order.state !== 'done' and order.state !== 'cancel'"
                                             class="btn btn-danger"
                                             t-on-click="() => this.cancelOrder(order)">

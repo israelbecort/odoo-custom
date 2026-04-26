@@ -433,6 +433,7 @@ class CustomerOrdersScreen extends Component {
     }
 
     async chargePending(order) {
+        console.log("COBRAR PENDIENTE", order);
         const currentOrder = this.pos.getOrder();
     
         if (currentOrder && !currentOrder.isEmpty()) {
