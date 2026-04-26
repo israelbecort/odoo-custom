@@ -8,6 +8,7 @@ import { makeAwaitable } from "@point_of_sale/app/utils/make_awaitable_dialog";
 import { PartnerList } from "@point_of_sale/app/screens/partner_list/partner_list";
 import { PosOrder } from "@point_of_sale/app/models/pos_order";
 import { TicketScreen } from "@point_of_sale/app/screens/ticket_screen/ticket_screen";
+import { PosOrder } from "@point_of_sale/app/models/pos_order";
 
 function getLineSubtotalIncl(line) {
     const qty = line.qty || 1;
@@ -352,5 +353,49 @@ patch(TicketScreen.prototype, {
         }
 
         await super.print(order);
+    },
+});
+
+patch(PosOrder.prototype, {
+    setPartner(partner) {
+        const customLinesData = this.getOrderlines()
+            .filter((line) => line.custom_description)
+            .map((line) => ({
+                line,
+                price_unit: line.price_unit,
+                full_product_name: line.full_product_name,
+                orderDisplayProductName: line.orderDisplayProductName
+                    ? { ...line.orderDisplayProductName }
+                    : null,
+                custom_description: line.custom_description,
+                custom_cost_price: line.custom_cost_price,
+                custom_margin: line.custom_margin,
+                price_type: line.price_type,
+            }));
+
+        const result = super.setPartner(partner);
+
+        for (const data of customLinesData) {
+            data.line.price_unit = data.price_unit;
+            data.line.full_product_name = data.full_product_name;
+            data.line.custom_description = data.custom_description;
+            data.line.custom_cost_price = data.custom_cost_price;
+            data.line.custom_margin = data.custom_margin;
+            data.line.price_type = "manual";
+
+            if (data.line.orderDisplayProductName) {
+                data.line.orderDisplayProductName.name = data.custom_description;
+            } else if (data.orderDisplayProductName) {
+                data.line.orderDisplayProductName = data.orderDisplayProductName;
+            }
+
+            if (typeof data.line.set_unit_price === "function") {
+                data.line.set_unit_price(data.price_unit);
+            } else if (typeof data.line.setUnitPrice === "function") {
+                data.line.setUnitPrice(data.price_unit);
+            }
+        }
+
+        return result;
     },
 });
