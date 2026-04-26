@@ -78,7 +78,7 @@ patch(PosStore.prototype, {
         const product = vals?.product_id || vals?.product_tmpl_id;
         const barcode = product?.barcode;
 
-        if (barcode !== "CUSTOM") {
+        if (barcode !== "CUSTOM" || opts.from_customer_order) {
             return await super.addLineToCurrentOrder(vals, opts, configure);
         }
 

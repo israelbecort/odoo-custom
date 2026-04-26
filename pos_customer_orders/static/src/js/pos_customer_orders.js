@@ -532,6 +532,7 @@ class CustomerOrdersScreen extends Component {
                 },
                 {
                     price: line.price_unit,
+                    from_customer_order: true,
                 },
                 false
             );
