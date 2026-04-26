@@ -9,10 +9,18 @@ import { PartnerList } from "@point_of_sale/app/screens/partner_list/partner_lis
 import { PosOrder } from "@point_of_sale/app/models/pos_order";
 import { TicketScreen } from "@point_of_sale/app/screens/ticket_screen/ticket_screen";
 
+function getLineSubtotalIncl(line) {
+    const qty = line.qty || 1;
+    const priceUnit = line.price_unit || 0;
+    const taxes = line.product_id?.taxes_id || [];
+    const taxAmount = taxes.reduce((sum, tax) => sum + (tax.amount || 0), 0);
+    return priceUnit * qty * (1 + taxAmount / 100);
+}
+
 class CustomerOrderPopup extends Component {
     static template = "pos_customer_orders.CustomerOrderPopup";
     static components = { Dialog };
-    static props = ["close", "getPayload", "partner", "selectPartner"];
+    static props = ["close", "getPayload", "partner", "selectPartner", "lines"];
 
     setup() {
         this.state = useState({
@@ -20,7 +28,26 @@ class CustomerOrderPopup extends Component {
             expectedDate: "",
             note: "",
             partner: this.props.partner,
+            selectedLineUuids: {},
         });
+
+        for (const line of this.props.lines || []) {
+            this.state.selectedLineUuids[line.uuid] = false;
+        }
+    }
+
+    get selectedLines() {
+        return (this.props.lines || []).filter((line) => this.state.selectedLineUuids[line.uuid]);
+    }
+
+    get selectedTotal() {
+        return Number(
+            this.selectedLines.reduce((sum, line) => sum + line.price_subtotal_incl, 0).toFixed(2)
+        );
+    }
+
+    toggleLine(uuid) {
+        this.state.selectedLineUuids[uuid] = !this.state.selectedLineUuids[uuid];
     }
 
     cancel() {
@@ -29,7 +56,6 @@ class CustomerOrderPopup extends Component {
 
     async changePartner() {
         const selectedPartner = await this.props.selectPartner(this.state.partner);
-
         if (selectedPartner) {
             this.state.partner = selectedPartner;
         }
@@ -38,7 +64,19 @@ class CustomerOrderPopup extends Component {
     confirm() {
         const paidAmount = parseFloat((this.state.paidAmount || "").replace(",", "."));
 
+        if (!this.state.partner?.id) {
+            return;
+        }
+
+        if (!this.selectedLines.length) {
+            return;
+        }
+
         if (!paidAmount || paidAmount <= 0) {
+            return;
+        }
+
+        if (paidAmount > this.selectedTotal) {
             return;
         }
 
@@ -47,22 +85,11 @@ class CustomerOrderPopup extends Component {
             paid_amount: paidAmount,
             expected_date: this.state.expectedDate || false,
             note: this.state.note.trim(),
+            selected_line_uuids: this.selectedLines.map((line) => line.uuid),
         });
 
         this.props.close();
     }
-}
-
-function getLineSubtotalIncl(line) {
-    const qty = line.qty || 1;
-    const priceUnit = line.price_unit || 0;
-
-    const taxes = line.product_id?.taxes_id || [];
-    const taxAmount = taxes.reduce((sum, tax) => {
-        return sum + (tax.amount || 0);
-    }, 0);
-
-    return priceUnit * qty * (1 + taxAmount / 100);
 }
 
 patch(PosOrder.prototype, {
@@ -70,11 +97,9 @@ patch(PosOrder.prototype, {
         super.setup(vals);
 
         this.uiState = this.uiState || {};
-
         const linesJson = this.customer_order_lines_json || vals?.customer_order_lines_json;
 
         if (this.is_customer_order || vals?.is_customer_order) {
-            console.log("LOADED CUSTOMER ORDER DATA", this.uiState.customer_order_data);
             let customerOrderLines = [];
 
             try {
@@ -137,8 +162,25 @@ patch(ControlButtons.prototype, {
             order.setPartner(partner);
         }
 
+        const currentLines = order.getOrderlines().map((line) => {
+            const qty = line.qty || 1;
+            const priceUnit = line.price_unit || 0;
+            const subtotalIncl = Number(getLineSubtotalIncl(line).toFixed(2));
+
+            return {
+                uuid: line.uuid,
+                originalLine: line,
+                product_id: line.product_id?.id,
+                description: line.full_product_name || line.product_id?.display_name || "",
+                qty,
+                price_unit: priceUnit,
+                price_subtotal_incl: subtotalIncl,
+            };
+        });
+
         const payload = await makeAwaitable(this.dialog, CustomerOrderPopup, {
             partner,
+            lines: currentLines,
             selectPartner: async (currentPartner) => {
                 const selectedPartner = await makeAwaitable(this.dialog, PartnerList, {
                     partner: currentPartner,
@@ -157,19 +199,24 @@ patch(ControlButtons.prototype, {
             return;
         }
 
-        const lines = order.getOrderlines().map((line) => {
-            const qty = line.qty || 1;
-            const priceUnit = line.price_unit || 0;
-            const subtotalIncl = Number(getLineSubtotalIncl(line).toFixed(2));
+        const selectedLines = currentLines.filter((line) =>
+            payload.selected_line_uuids.includes(line.uuid)
+        );
 
-            return {
-                product_id: line.product_id?.id,
-                description: line.full_product_name || line.product_id?.display_name || "",
-                qty: qty,
-                price_unit: priceUnit,
-                price_subtotal_incl: subtotalIncl,
-            };
-        });
+        if (!selectedLines.length) {
+            this.notification.add("Seleccione al menos una línea para el encargo.", {
+                type: "warning",
+            });
+            return;
+        }
+
+        const lines = selectedLines.map((line) => ({
+            product_id: line.product_id,
+            description: line.description,
+            qty: line.qty,
+            price_unit: line.price_unit,
+            price_subtotal_incl: line.price_subtotal_incl,
+        }));
 
         const totalAmount = Number(
             lines.reduce((sum, line) => sum + line.price_subtotal_incl, 0).toFixed(2)
@@ -201,7 +248,7 @@ patch(ControlButtons.prototype, {
             total: Number(result.total_amount),
             paid: Number(result.paid_amount),
             pending: Number(result.pending_amount),
-            lines: lines,
+            lines,
         };
 
         await this.pos.loadNewProducts([
@@ -217,8 +264,8 @@ patch(ControlButtons.prototype, {
             return;
         }
 
-        for (const line of [...order.getOrderlines()]) {
-            order.removeOrderline(line);
+        for (const line of selectedLines) {
+            order.removeOrderline(line.originalLine);
         }
 
         await this.pos.addLineToCurrentOrder(
