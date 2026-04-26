@@ -94,4 +94,105 @@
         </xpath>
     </t>
 
+    <t t-name="pos_customer_orders.CustomerOrdersScreen">
+        <div class="pos customer-orders-screen">
+    
+            <div class="top-content d-flex align-items-center gap-2 p-3 border-bottom">
+                <button class="btn btn-secondary" t-on-click="back">
+                    <i class="fa fa-arrow-left me-1"/>
+                    Registrar
+                </button>
+    
+                <h2 class="m-0 flex-grow-1">Encargos</h2>
+    
+                <select class="form-select w-auto"
+                        t-model="state.filter"
+                        t-on-change="loadOrders">
+                    <option value="active">Activos</option>
+                    <option value="draft">Pendientes</option>
+                    <option value="received">Mercancía recibida</option>
+                    <option value="done">Entregados</option>
+                    <option value="cancel">Cancelados</option>
+                    <option value="all">Todos</option>
+                </select>
+    
+                <button class="btn btn-primary" t-on-click="loadOrders">
+                    Actualizar
+                </button>
+            </div>
+    
+            <div class="p-3">
+                <input class="form-control mb-3"
+                       placeholder="Buscar encargo o cliente..."
+                       t-model="state.search"/>
+    
+                <div class="list-group">
+                    <t t-foreach="filteredOrders" t-as="order" t-key="order.id">
+                        <div class="list-group-item d-flex align-items-center gap-3">
+                            <div class="flex-grow-1">
+                                <div class="fw-bold">
+                                    <t t-esc="order.name"/>
+                                </div>
+    
+                                <div class="text-muted">
+                                    Cliente:
+                                    <t t-esc="order.partner_id?.[1] || '-'"/>
+                                </div>
+    
+                                <div class="text-muted">
+                                    Fecha prevista:
+                                    <t t-esc="order.expected_date || '-'"/>
+                                </div>
+    
+                                <div>
+                                    Total:
+                                    <strong><t t-esc="order.total_amount.toFixed(2)"/> €</strong>
+                                    · Pagado:
+                                    <strong><t t-esc="order.paid_amount.toFixed(2)"/> €</strong>
+                                    · Pendiente:
+                                    <strong><t t-esc="order.pending_amount.toFixed(2)"/> €</strong>
+                                </div>
+                            </div>
+    
+                            <div class="text-end">
+                                <div class="badge bg-secondary mb-2">
+                                    <t t-esc="stateLabel(order.state)"/>
+                                </div>
+    
+                                <div class="d-flex gap-2">
+                                    <button t-if="order.state === 'draft'"
+                                            class="btn btn-info"
+                                            t-on-click="() => markReceived(order)">
+                                        Mercancía recibida
+                                    </button>
+    
+                                    <button t-if="order.state === 'received'"
+                                            class="btn btn-success"
+                                            t-on-click="() => markDone(order)">
+                                        Entregado
+                                    </button>
+    
+                                    <button t-if="order.state !== 'done' and order.state !== 'cancel'"
+                                            class="btn btn-danger"
+                                            t-on-click="() => cancelOrder(order)">
+                                        Cancelar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </t>
+                </div>
+            </div>
+        </div>
+    </t>
+
+    <t t-inherit="point_of_sale.ProductScreen" t-inherit-mode="extension">
+        <xpath expr="//button[contains(@class, 'ticket-button')]" position="after">
+            <button class="btn btn-lg btn-secondary"
+                    t-on-click="showCustomerOrders">
+                Encargos
+            </button>
+        </xpath>
+    </t>
+
 </templates>

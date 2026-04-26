@@ -8,6 +8,8 @@ import { makeAwaitable } from "@point_of_sale/app/utils/make_awaitable_dialog";
 import { PartnerList } from "@point_of_sale/app/screens/partner_list/partner_list";
 import { PosOrder } from "@point_of_sale/app/models/pos_order";
 import { TicketScreen } from "@point_of_sale/app/screens/ticket_screen/ticket_screen";
+import { registry } from "@web/core/registry";
+import { ProductScreen } from "@point_of_sale/app/screens/product_screen/product_screen";
 
 function getLineSubtotalIncl(line) {
     const qty = line.qty || 1;
@@ -396,5 +398,100 @@ patch(PosOrder.prototype, {
         }
 
         return result;
+    },
+});
+
+class CustomerOrdersScreen extends Component {
+    static template = "pos_customer_orders.CustomerOrdersScreen";
+
+    setup() {
+        this.state = useState({
+            orders: [],
+            filter: "active",
+            search: "",
+        });
+        this.loadOrders();
+    }
+
+    async loadOrders() {
+        let domain = [];
+
+        if (this.state.filter === "active") {
+            domain = [["state", "in", ["draft", "received"]]];
+        } else if (this.state.filter !== "all") {
+            domain = [["state", "=", this.state.filter]];
+        }
+
+        const orders = await this.env.services.orm.searchRead(
+            "pos.customer.order",
+            domain,
+            [
+                "name",
+                "partner_id",
+                "expected_date",
+                "total_amount",
+                "paid_amount",
+                "pending_amount",
+                "state",
+            ],
+            {
+                order: "create_date desc",
+                limit: 100,
+            }
+        );
+
+        this.state.orders = orders;
+    }
+
+    get filteredOrders() {
+        const search = this.state.search.toLowerCase().trim();
+
+        if (!search) {
+            return this.state.orders;
+        }
+
+        return this.state.orders.filter((order) => {
+            const partnerName = order.partner_id?.[1] || "";
+            return (
+                order.name.toLowerCase().includes(search) ||
+                partnerName.toLowerCase().includes(search)
+            );
+        });
+    }
+
+    stateLabel(state) {
+        return {
+            draft: "Pendiente",
+            received: "Mercancía recibida",
+            done: "Entregado",
+            cancel: "Cancelado",
+        }[state] || state;
+    }
+
+    async markReceived(order) {
+        await this.env.services.orm.call("pos.customer.order", "action_mark_received", [[order.id]]);
+        await this.loadOrders();
+    }
+
+    async markDone(order) {
+        await this.env.services.orm.call("pos.customer.order", "action_mark_done", [[order.id]]);
+        await this.loadOrders();
+    }
+
+    async cancelOrder(order) {
+        await this.env.services.orm.call("pos.customer.order", "action_cancel", [[order.id]]);
+        await this.loadOrders();
+    }
+
+    back() {
+        this.pos.showScreen("ProductScreen");
+    }
+}
+
+registry.category("pos_screens").add("CustomerOrdersScreen", CustomerOrdersScreen);
+
+patch(ProductScreen.prototype, {
+    showCustomerOrders() {
+        this.pos.showScreen("CustomerOrdersScreen");
     },
 });
