@@ -159,7 +159,8 @@ patch(ControlButtons.prototype, {
                 return;
             }
 
-            order.setPartner(partner);
+            // Importante: NO hacemos order.setPartner(partner) aquí.
+            // Odoo recalcula precios al asignar cliente y puede poner CUSTOM a 0,00.
         }
 
         const currentLines = order.getOrderlines().map((line) => {
@@ -188,7 +189,7 @@ patch(ControlButtons.prototype, {
 
                 if (selectedPartner) {
                     partner = selectedPartner;
-                    order.setPartner(partner);
+                    // Importante: NO hacemos order.setPartner(partner) aquí.
                 }
 
                 return partner;
@@ -232,15 +233,23 @@ patch(ControlButtons.prototype, {
         const result = await this.env.services.orm.call(
             "pos.customer.order",
             "create_from_pos",
-            [{
-                partner_id: payload.partner_id,
-                lines,
-                total_amount: totalAmount,
-                paid_amount: payload.paid_amount,
-                expected_date: payload.expected_date,
-                note: payload.note,
-            }]
+            [
+                {
+                    partner_id: payload.partner_id,
+                    lines,
+                    total_amount: totalAmount,
+                    paid_amount: payload.paid_amount,
+                    expected_date: payload.expected_date,
+                    note: payload.note,
+                },
+            ]
         );
+
+        // Ahora sí asignamos el cliente, cuando ya hemos leído/importado las líneas.
+        // Si Odoo recalcula precios, ya no afecta al cálculo del encargo.
+        if (partner) {
+            order.setPartner(partner);
+        }
 
         order.uiState.is_customer_order = true;
         order.uiState.customer_order_data = {
@@ -251,9 +260,7 @@ patch(ControlButtons.prototype, {
             lines,
         };
 
-        await this.pos.loadNewProducts([
-            ["id", "=", result.product_id],
-        ]);
+        await this.pos.loadNewProducts([["id", "=", result.product_id]]);
 
         const product = this.pos.models["product.product"].get(result.product_id);
 
