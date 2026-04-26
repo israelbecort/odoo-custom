@@ -572,16 +572,8 @@ class CustomerOrdersScreen extends Component {
             const orderLine = currentOrder.getSelectedOrderline();
         
             if (orderLine) {
-                if (typeof orderLine.set_unit_price === "function") {
-                    orderLine.set_unit_price(price);
-                } else if (typeof orderLine.setUnitPrice === "function") {
-                    orderLine.setUnitPrice(price);
-                } else {
-                    orderLine.price_unit = price;
-                }
-        
-                orderLine.price_type = "manual";
-        
+                const price = getPriceUnitFromTotalIncl(line, taxById);
+            
                 if (typeof orderLine.setQuantity === "function") {
                     orderLine.setQuantity(line.qty);
                 } else if (typeof orderLine.set_quantity === "function") {
@@ -589,12 +581,29 @@ class CustomerOrdersScreen extends Component {
                 } else {
                     orderLine.qty = line.qty;
                 }
-        
+            
+                if (typeof orderLine.setUnitPrice === "function") {
+                    orderLine.setUnitPrice(price);
+                } else if (typeof orderLine.set_unit_price === "function") {
+                    orderLine.set_unit_price(price);
+                } else {
+                    orderLine.price_unit = price;
+                }
+            
+                orderLine.price_type = "manual";
                 orderLine.full_product_name = line.description;
-        
+            
                 if (orderLine.orderDisplayProductName) {
                     orderLine.orderDisplayProductName.name = line.description;
                 }
+            
+                console.log("LINEA ENCARGO RECONSTRUIDA", {
+                    description: line.description,
+                    qty: line.qty,
+                    total_incl_original: line.price_subtotal_incl,
+                    tax_ids: line.tax_ids,
+                    price_unit_calculado: price,
+                });
             }
         }
 
