@@ -9,7 +9,6 @@ import { PartnerList } from "@point_of_sale/app/screens/partner_list/partner_lis
 import { PosOrder } from "@point_of_sale/app/models/pos_order";
 import { TicketScreen } from "@point_of_sale/app/screens/ticket_screen/ticket_screen";
 import { registry } from "@web/core/registry";
-import { ProductScreen } from "@point_of_sale/app/screens/product_screen/product_screen";
 
 function getLineSubtotalIncl(line) {
     const qty = line.qty || 1;
@@ -489,9 +488,3 @@ class CustomerOrdersScreen extends Component {
 }
 
 registry.category("pos_screens").add("CustomerOrdersScreen", CustomerOrdersScreen);
-
-patch(ProductScreen.prototype, {
-    showCustomerOrders() {
-        this.pos.showScreen("CustomerOrdersScreen");
-    },
-});
