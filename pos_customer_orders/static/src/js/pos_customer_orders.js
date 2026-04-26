@@ -167,6 +167,10 @@ patch(ControlButtons.prototype, {
             const priceUnit = line.price_unit || 0;
             const subtotalIncl = Number(getLineSubtotalIncl(line).toFixed(2));
 
+            const taxIds = (line.tax_ids || line.product_id?.taxes_id || [])
+                .map((tax) => tax.id)
+                .filter(Boolean);
+
             return {
                 uuid: line.uuid,
                 originalLine: line,
@@ -175,6 +179,7 @@ patch(ControlButtons.prototype, {
                 qty,
                 price_unit: priceUnit,
                 price_subtotal_incl: subtotalIncl,
+                tax_ids: taxIds,
             };
         });
 
@@ -215,6 +220,7 @@ patch(ControlButtons.prototype, {
             qty: line.qty,
             price_unit: line.price_unit,
             price_subtotal_incl: line.price_subtotal_incl,
+            tax_ids: line.tax_ids || [],
         }));
 
         const totalAmount = Number(
@@ -468,6 +474,7 @@ class CustomerOrdersScreen extends Component {
                 "qty",
                 "price_unit",
                 "price_subtotal_incl",
+                "tax_ids",
             ]
         );
 

@@ -106,6 +106,7 @@ class PosCustomerOrder(models.Model):
                     "qty": float(line.get("qty") or 0),
                     "price_unit": float(line.get("price_unit") or 0),
                     "price_subtotal_incl": round(float(line.get("price_subtotal_incl") or 0), 2),
+                    "tax_ids": [(6, 0, line.get("tax_ids", []))],
                 })
                 for line in lines
             ],
@@ -144,3 +145,4 @@ class PosCustomerOrderLine(models.Model):
     qty = fields.Float(string="Cantidad")
     price_unit = fields.Float(string="Precio unitario")
     price_subtotal_incl = fields.Float(string="Subtotal")
+    tax_ids = fields.Many2many("account.tax", string="Impuestos")
