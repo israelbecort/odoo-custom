@@ -487,4 +487,7 @@ class CustomerOrdersScreen extends Component {
     }
 }
 
-registry.category("pos_screens").add("CustomerOrdersScreen", CustomerOrdersScreen);
+registry.category("pos_pages").add("CustomerOrdersScreen", {
+    name: "CustomerOrdersScreen",
+    component: CustomerOrdersScreen,
+});

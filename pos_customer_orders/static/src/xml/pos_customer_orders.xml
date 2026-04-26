@@ -190,7 +190,7 @@
         <xpath expr="//button[contains(@class, 'orders-button')]" position="after">
             <button class="customer-orders-button btn btn-lg btn-light lh-lg"
                     t-att-class="{'active': this.pos.router.state.current === 'CustomerOrdersScreen'}"
-                    t-on-click="() => this.pos.showScreen('CustomerOrdersScreen')">
+                    t-on-click="() => this.pos.navigate('CustomerOrdersScreen')">
                 <t t-if="!ui.isSmall">
                     <span>Encargos</span>
                 </t>
