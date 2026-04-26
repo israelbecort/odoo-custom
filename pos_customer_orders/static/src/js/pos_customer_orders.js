@@ -144,6 +144,7 @@ patch(PosOrder.prototype, {
 
     serializeForORM(opts = {}) {
         const data = super.serializeForORM(opts);
+        data.customer_order_id = this.uiState.customer_order_data.id;
 
         if (this.uiState?.is_customer_order && this.uiState?.customer_order_data) {
             data.is_customer_order = true;
@@ -602,6 +603,14 @@ class CustomerOrdersScreen extends Component {
 
                 orderLine.full_product_name = line.description;
 
+                orderLine.custom_description = line.description;
+
+                if (orderLine.orderDisplayProductName) {
+                    orderLine.orderDisplayProductName.name = line.description;
+                } else {
+                    orderLine.orderDisplayProductName = { name: line.description };
+                }
+
                 if (orderLine.orderDisplayProductName) {
                     orderLine.orderDisplayProductName.name = line.description;
                 }
@@ -652,6 +661,7 @@ class CustomerOrdersScreen extends Component {
 
         currentOrder.uiState.is_customer_order = true;
         currentOrder.uiState.customer_order_data = {
+            id: order.id,
             name: customerOrder.name,
             original_ticket_lines: customerOrder.original_ticket_lines_json
             ? JSON.parse(customerOrder.original_ticket_lines_json)
