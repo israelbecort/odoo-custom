@@ -599,10 +599,8 @@ class CustomerOrdersScreen extends Component {
                 }
             
                 orderLine.full_product_name = displayName;
-                orderLine.customer_note = displayName;
-                orderLine.note = displayName;
                 orderLine.custom_description = displayName;
-            
+
                 if (orderLine.orderDisplayProductName) {
                     orderLine.orderDisplayProductName.name = displayName;
                 } else {
@@ -630,10 +628,8 @@ class CustomerOrdersScreen extends Component {
             const displayName = `Anticipo ${customerOrder.name}`;
         
             advanceLine.full_product_name = displayName;
-            advanceLine.customer_note = displayName;
-            advanceLine.note = displayName;
             advanceLine.custom_description = displayName;
-        
+
             if (advanceLine.orderDisplayProductName) {
                 advanceLine.orderDisplayProductName.name = displayName;
             } else {
