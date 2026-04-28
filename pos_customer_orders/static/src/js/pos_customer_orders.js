@@ -7,7 +7,6 @@ import { Dialog } from "@web/core/dialog/dialog";
 import { makeAwaitable } from "@point_of_sale/app/utils/make_awaitable_dialog";
 import { PartnerList } from "@point_of_sale/app/screens/partner_list/partner_list";
 import { PosOrder } from "@point_of_sale/app/models/pos_order";
-import { Orderline } from "@point_of_sale/app/models/pos_order_line";
 import { TicketScreen } from "@point_of_sale/app/screens/ticket_screen/ticket_screen";
 import { registry } from "@web/core/registry";
 import { usePos } from "@point_of_sale/app/hooks/pos_hook";
@@ -40,19 +39,6 @@ function getLineSubtotalIncl(line) {
     return priceUnit * qty * (1 + taxAmount / 100);
 }
 
-patch(Orderline.prototype, {
-    getDisplayData() {
-        const data = super.getDisplayData(...arguments);
-
-        if (this.custom_description) {
-            data.productName = this.custom_description;
-            data.product_name = this.custom_description;
-            data.name = this.custom_description;
-        }
-
-        return data;
-    },
-});
 
 class CustomerOrderPopup extends Component {
     static template = "pos_customer_orders.CustomerOrderPopup";
@@ -606,23 +592,21 @@ class CustomerOrdersScreen extends Component {
             const orderLine = currentOrder.getSelectedOrderline();
 
             if (orderLine) {
-                if (typeof orderLine.setQuantity === "function") {
-                    orderLine.setQuantity(line.qty);
-                } else if (typeof orderLine.set_quantity === "function") {
-                    orderLine.set_quantity(line.qty);
-                } else {
-                    orderLine.qty = line.qty;
+                const displayName = line.description;
+            
+                if (typeof orderLine.set_full_product_name === "function") {
+                    orderLine.set_full_product_name(displayName);
                 }
-
-                orderLine.price_unit = price;
-                orderLine.price_type = "manual";
-                orderLine.full_product_name = line.description;
-                orderLine.custom_description = line.description;
-
+            
+                orderLine.full_product_name = displayName;
+                orderLine.customer_note = displayName;
+                orderLine.note = displayName;
+                orderLine.custom_description = displayName;
+            
                 if (orderLine.orderDisplayProductName) {
-                    orderLine.orderDisplayProductName.name = line.description;
+                    orderLine.orderDisplayProductName.name = displayName;
                 } else {
-                    orderLine.orderDisplayProductName = { name: line.description };
+                    orderLine.orderDisplayProductName = { name: displayName };
                 }
             }
         }
@@ -643,26 +627,17 @@ class CustomerOrdersScreen extends Component {
         const advanceLine = currentOrder.getSelectedOrderline();
 
         if (advanceLine) {
-            const advancePrice = -Math.abs(Number(customerOrder.paid_amount || 0));
-
-            if (typeof advanceLine.set_unit_price === "function") {
-                advanceLine.set_unit_price(advancePrice);
-            } else if (typeof advanceLine.setUnitPrice === "function") {
-                advanceLine.setUnitPrice(advancePrice);
-            } else {
-                advanceLine.price_unit = advancePrice;
-            }
-
-            advanceLine.price_type = "manual";
-            advanceLine.full_product_name = `Anticipo ${customerOrder.name}`;
-            advanceLine.custom_description = `Anticipo ${customerOrder.name}`;
-
+            const displayName = `Anticipo ${customerOrder.name}`;
+        
+            advanceLine.full_product_name = displayName;
+            advanceLine.customer_note = displayName;
+            advanceLine.note = displayName;
+            advanceLine.custom_description = displayName;
+        
             if (advanceLine.orderDisplayProductName) {
-                advanceLine.orderDisplayProductName.name = `Anticipo ${customerOrder.name}`;
+                advanceLine.orderDisplayProductName.name = displayName;
             } else {
-                advanceLine.orderDisplayProductName = {
-                    name: `Anticipo ${customerOrder.name}`,
-                };
+                advanceLine.orderDisplayProductName = { name: displayName };
             }
         }
 
