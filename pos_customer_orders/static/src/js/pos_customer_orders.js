@@ -7,6 +7,7 @@ import { Dialog } from "@web/core/dialog/dialog";
 import { makeAwaitable } from "@point_of_sale/app/utils/make_awaitable_dialog";
 import { PartnerList } from "@point_of_sale/app/screens/partner_list/partner_list";
 import { PosOrder } from "@point_of_sale/app/models/pos_order";
+import { Orderline } from "@point_of_sale/app/models/pos_order_line";
 import { TicketScreen } from "@point_of_sale/app/screens/ticket_screen/ticket_screen";
 import { registry } from "@web/core/registry";
 import { usePos } from "@point_of_sale/app/hooks/pos_hook";
@@ -28,7 +29,6 @@ function getPriceUnitFromTotalIncl(line, taxById) {
     }
 
     const taxRate = taxes.reduce((sum, tax) => sum + Number(tax.amount || 0), 0);
-
     return Number((totalIncl / qty / (1 + taxRate / 100)).toFixed(6));
 }
 
@@ -39,6 +39,20 @@ function getLineSubtotalIncl(line) {
     const taxAmount = taxes.reduce((sum, tax) => sum + (tax.amount || 0), 0);
     return priceUnit * qty * (1 + taxAmount / 100);
 }
+
+patch(Orderline.prototype, {
+    getDisplayData() {
+        const data = super.getDisplayData(...arguments);
+
+        if (this.custom_description) {
+            data.productName = this.custom_description;
+            data.product_name = this.custom_description;
+            data.name = this.custom_description;
+        }
+
+        return data;
+    },
+});
 
 class CustomerOrderPopup extends Component {
     static template = "pos_customer_orders.CustomerOrderPopup";
@@ -133,6 +147,7 @@ patch(PosOrder.prototype, {
 
             this.uiState.is_customer_order = true;
             this.uiState.customer_order_data = {
+                id: this.customer_order_id?.id || this.customer_order_id || vals?.customer_order_id || false,
                 name: this.customer_order_ref || vals?.customer_order_ref,
                 total: Number(this.customer_order_total || vals?.customer_order_total || 0),
                 paid: Number(this.customer_order_paid || vals?.customer_order_paid || 0),
@@ -144,7 +159,7 @@ patch(PosOrder.prototype, {
 
     serializeForORM(opts = {}) {
         const data = super.serializeForORM(opts);
-    
+
         if (this.uiState?.is_customer_order && this.uiState?.customer_order_data) {
             data.customer_order_id = this.uiState.customer_order_data.id || false;
             data.is_customer_order = true;
@@ -156,7 +171,7 @@ patch(PosOrder.prototype, {
                 this.uiState.customer_order_data.lines || []
             );
         }
-    
+
         return data;
     },
 });
@@ -286,6 +301,7 @@ patch(ControlButtons.prototype, {
 
         order.uiState.is_customer_order = true;
         order.uiState.customer_order_data = {
+            id: result.id,
             name: result.name,
             total: Number(result.total_amount),
             paid: Number(result.paid_amount),
@@ -332,9 +348,12 @@ patch(ControlButtons.prototype, {
 
             advanceLine.price_type = "manual";
             advanceLine.full_product_name = `Anticipo ${result.name}`;
+            advanceLine.custom_description = `Anticipo ${result.name}`;
 
             if (advanceLine.orderDisplayProductName) {
                 advanceLine.orderDisplayProductName.name = `Anticipo ${result.name}`;
+            } else {
+                advanceLine.orderDisplayProductName = { name: `Anticipo ${result.name}` };
             }
         }
 
@@ -352,6 +371,7 @@ patch(TicketScreen.prototype, {
                 [order.id],
                 [
                     "is_customer_order",
+                    "customer_order_id",
                     "customer_order_ref",
                     "customer_order_total",
                     "customer_order_paid",
@@ -376,6 +396,7 @@ patch(TicketScreen.prototype, {
                 order.uiState = order.uiState || {};
                 order.uiState.is_customer_order = true;
                 order.uiState.customer_order_data = {
+                    id: posOrder.customer_order_id?.[0] || false,
                     name: posOrder.customer_order_ref,
                     total: Number(posOrder.customer_order_total || 0),
                     paid: Number(posOrder.customer_order_paid || 0),
@@ -465,8 +486,6 @@ class CustomerOrdersScreen extends Component {
     }
 
     async chargePending(order) {
-        console.log("COBRAR PENDIENTE", order);
-
         const currentOrder = this.pos.getOrder();
 
         if (currentOrder && !currentOrder.isEmpty()) {
@@ -514,10 +533,10 @@ class CustomerOrdersScreen extends Component {
 
         const taxes = allTaxIds.length
             ? await this.env.services.orm.searchRead(
-                "account.tax",
-                [["id", "in", allTaxIds]],
-                ["id", "amount", "price_include"]
-            )
+                  "account.tax",
+                  [["id", "in", allTaxIds]],
+                  ["id", "amount", "price_include"]
+              )
             : [];
 
         const taxById = Object.fromEntries(taxes.map((tax) => [tax.id, tax]));
@@ -565,13 +584,13 @@ class CustomerOrdersScreen extends Component {
         for (const line of lines) {
             const productId = line.product_id?.[0];
             const product = this.pos.models["product.product"].get(productId);
-        
+
             if (!product) {
                 continue;
             }
-        
+
             const price = getPriceUnitFromTotalIncl(line, taxById);
-        
+
             await this.pos.addLineToCurrentOrder(
                 {
                     product_id: product,
@@ -583,12 +602,10 @@ class CustomerOrdersScreen extends Component {
                 },
                 false
             );
-        
-            const orderLine = currentOrder.getSelectedOrderline();
-        
-            if (orderLine) {
-                const price = getPriceUnitFromTotalIncl(line, taxById);
 
+            const orderLine = currentOrder.getSelectedOrderline();
+
+            if (orderLine) {
                 if (typeof orderLine.setQuantity === "function") {
                     orderLine.setQuantity(line.qty);
                 } else if (typeof orderLine.set_quantity === "function") {
@@ -597,12 +614,9 @@ class CustomerOrdersScreen extends Component {
                     orderLine.qty = line.qty;
                 }
 
-                // Forzamos precio exacto sin redondeo del setter
                 orderLine.price_unit = price;
                 orderLine.price_type = "manual";
-
                 orderLine.full_product_name = line.description;
-
                 orderLine.custom_description = line.description;
 
                 if (orderLine.orderDisplayProductName) {
@@ -610,18 +624,6 @@ class CustomerOrdersScreen extends Component {
                 } else {
                     orderLine.orderDisplayProductName = { name: line.description };
                 }
-
-                if (orderLine.orderDisplayProductName) {
-                    orderLine.orderDisplayProductName.name = line.description;
-                }
-            
-                console.log("LINEA ENCARGO RECONSTRUIDA", {
-                    description: line.description,
-                    qty: line.qty,
-                    total_incl_original: line.price_subtotal_incl,
-                    tax_ids: line.tax_ids,
-                    price_unit_calculado: price,
-                });
             }
         }
 
@@ -653,9 +655,14 @@ class CustomerOrdersScreen extends Component {
 
             advanceLine.price_type = "manual";
             advanceLine.full_product_name = `Anticipo ${customerOrder.name}`;
+            advanceLine.custom_description = `Anticipo ${customerOrder.name}`;
 
             if (advanceLine.orderDisplayProductName) {
                 advanceLine.orderDisplayProductName.name = `Anticipo ${customerOrder.name}`;
+            } else {
+                advanceLine.orderDisplayProductName = {
+                    name: `Anticipo ${customerOrder.name}`,
+                };
             }
         }
 
@@ -664,8 +671,8 @@ class CustomerOrdersScreen extends Component {
             id: order.id,
             name: customerOrder.name,
             original_ticket_lines: customerOrder.original_ticket_lines_json
-            ? JSON.parse(customerOrder.original_ticket_lines_json)
-            : [],
+                ? JSON.parse(customerOrder.original_ticket_lines_json)
+                : [],
             total: Number(customerOrder.total_amount || 0),
             paid: Number(customerOrder.paid_amount || 0),
             pending: Number(customerOrder.pending_amount || 0),
