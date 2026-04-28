@@ -1,7 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <templates id="template" xml:space="preserve">
 
-    <t t-inherit="point_of_sale.OrderReceipt" t-inherit-mode="extension">
+    <t t-name="pos_customer_orders.OrderReceiptExtension"
+       t-inherit="point_of_sale.OrderReceipt"
+       t-inherit-mode="extension">
+
         <xpath expr="//div[contains(@class, 'receipt-total')]" position="after">
 
             <t t-if="order.uiState.is_customer_order and order.uiState.customer_order_data">
@@ -11,7 +14,27 @@
                         Encargo <t t-esc="order.uiState.customer_order_data.name"/>
                     </div>
 
+                    <t t-if="order.uiState.customer_order_data.original_ticket_lines and order.uiState.customer_order_data.original_ticket_lines.length">
+                        <div class="pt-2">
+                            <div class="fw-bolder">Ticket original</div>
+
+                            <t t-foreach="order.uiState.customer_order_data.original_ticket_lines" t-as="line" t-key="line_index">
+                                <div class="d-flex justify-content-between">
+                                    <span>
+                                        <t t-esc="line.description"/>
+                                        <t t-if="line.qty and line.qty != 1">
+                                            x<t t-esc="line.qty"/>
+                                        </t>
+                                    </span>
+                                    <span t-out="formatCurrency(line.price_subtotal_incl)" class="font-monospace"/>
+                                </div>
+                            </t>
+                        </div>
+                    </t>
+
                     <div class="pt-2">
+                        <div class="fw-bolder">Producto pendiente</div>
+
                         <t t-foreach="order.uiState.customer_order_data.lines" t-as="line" t-key="line_index">
                             <div class="d-flex justify-content-between">
                                 <span>
@@ -46,67 +69,6 @@
             </t>
 
         </xpath>
-    </t>
-
-    <t t-if="order.uiState.is_customer_order and order.uiState.customer_order_data">
-        <div class="pt-2 mt-2 border-top border-bottom pb-2">
-    
-            <div class="fw-bolder text-center">
-                Encargo <t t-esc="order.uiState.customer_order_data.name"/>
-            </div>
-    
-            <t t-if="order.uiState.customer_order_data.original_ticket_lines and order.uiState.customer_order_data.original_ticket_lines.length">
-                <div class="pt-2">
-                    <div class="fw-bolder">Ticket original</div>
-    
-                    <t t-foreach="order.uiState.customer_order_data.original_ticket_lines" t-as="line" t-key="line_index">
-                        <div class="d-flex justify-content-between">
-                            <span>
-                                <t t-esc="line.description"/>
-                                <t t-if="line.qty and line.qty != 1">
-                                    x<t t-esc="line.qty"/>
-                                </t>
-                            </span>
-                            <span t-out="formatCurrency(line.price_subtotal_incl)" class="font-monospace"/>
-                        </div>
-                    </t>
-                </div>
-            </t>
-    
-            <div class="pt-2">
-                <div class="fw-bolder">Producto pendiente</div>
-    
-                <t t-foreach="order.uiState.customer_order_data.lines" t-as="line" t-key="line_index">
-                    <div class="d-flex justify-content-between">
-                        <span>
-                            <t t-esc="line.description"/>
-                            <t t-if="line.qty and line.qty != 1">
-                                x<t t-esc="line.qty"/>
-                            </t>
-                        </span>
-                        <span t-out="formatCurrency(line.price_subtotal_incl)" class="font-monospace"/>
-                    </div>
-                </t>
-            </div>
-    
-            <div class="pt-2 border-top mt-2">
-                <div class="pos-receipt-amount">
-                    <span>Total encargo</span>
-                    <span t-out="formatCurrency(order.uiState.customer_order_data.total)" class="pos-receipt-right-align font-monospace"/>
-                </div>
-    
-                <div class="pos-receipt-amount">
-                    <span>Pagado</span>
-                    <span t-out="formatCurrency(order.uiState.customer_order_data.paid)" class="pos-receipt-right-align font-monospace"/>
-                </div>
-    
-                <div class="pos-receipt-amount fw-bolder">
-                    <span>Pendiente</span>
-                    <span t-out="formatCurrency(order.uiState.customer_order_data.pending)" class="pos-receipt-right-align font-monospace"/>
-                </div>
-            </div>
-    
-        </div>
     </t>
 
 </templates>
