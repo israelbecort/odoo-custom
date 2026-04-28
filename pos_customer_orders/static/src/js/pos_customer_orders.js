@@ -144,9 +144,9 @@ patch(PosOrder.prototype, {
 
     serializeForORM(opts = {}) {
         const data = super.serializeForORM(opts);
-        data.customer_order_id = this.uiState.customer_order_data.id;
-
+    
         if (this.uiState?.is_customer_order && this.uiState?.customer_order_data) {
+            data.customer_order_id = this.uiState.customer_order_data.id || false;
             data.is_customer_order = true;
             data.customer_order_ref = this.uiState.customer_order_data.name;
             data.customer_order_total = this.uiState.customer_order_data.total;
@@ -156,7 +156,7 @@ patch(PosOrder.prototype, {
                 this.uiState.customer_order_data.lines || []
             );
         }
-
+    
         return data;
     },
 });

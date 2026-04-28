@@ -4,6 +4,11 @@ from odoo import fields, models
 class PosOrder(models.Model):
     _inherit = "pos.order"
 
+    customer_order_id = fields.Many2one(
+        "pos.customer.order",
+        string="Encargo TPV",
+    )
+
     is_customer_order = fields.Boolean(string="Es encargo")
     customer_order_ref = fields.Char(string="Referencia encargo")
     customer_order_total = fields.Float(string="Total encargo")
