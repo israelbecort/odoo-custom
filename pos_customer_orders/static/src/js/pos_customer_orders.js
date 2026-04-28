@@ -594,18 +594,18 @@ class CustomerOrdersScreen extends Component {
             if (orderLine) {
                 const displayName = line.description;
             
-                if (typeof orderLine.set_full_product_name === "function") {
-                    orderLine.set_full_product_name(displayName);
+                if (typeof orderLine.setQuantity === "function") {
+                    orderLine.setQuantity(line.qty);
+                } else if (typeof orderLine.set_quantity === "function") {
+                    orderLine.set_quantity(line.qty);
+                } else {
+                    orderLine.qty = line.qty;
                 }
             
+                orderLine.price_unit = price;
+                orderLine.price_type = "manual";
                 orderLine.full_product_name = displayName;
                 orderLine.custom_description = displayName;
-
-                if (orderLine.orderDisplayProductName) {
-                    orderLine.orderDisplayProductName.name = displayName;
-                } else {
-                    orderLine.orderDisplayProductName = { name: displayName };
-                }
             }
         }
 
@@ -625,16 +625,20 @@ class CustomerOrdersScreen extends Component {
         const advanceLine = currentOrder.getSelectedOrderline();
 
         if (advanceLine) {
+            const advancePrice = -Math.abs(Number(customerOrder.paid_amount || 0));
             const displayName = `Anticipo ${customerOrder.name}`;
         
+            if (typeof advanceLine.set_unit_price === "function") {
+                advanceLine.set_unit_price(advancePrice);
+            } else if (typeof advanceLine.setUnitPrice === "function") {
+                advanceLine.setUnitPrice(advancePrice);
+            } else {
+                advanceLine.price_unit = advancePrice;
+            }
+        
+            advanceLine.price_type = "manual";
             advanceLine.full_product_name = displayName;
             advanceLine.custom_description = displayName;
-
-            if (advanceLine.orderDisplayProductName) {
-                advanceLine.orderDisplayProductName.name = displayName;
-            } else {
-                advanceLine.orderDisplayProductName = { name: displayName };
-            }
         }
 
         currentOrder.uiState.is_customer_order = true;
